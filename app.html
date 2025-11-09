@@ -28,6 +28,46 @@
             height: 100%;
             min-height: 80vh; /* Garante uma altura mínima */
         }
+
+        /* --- Estilos das Sub-Abas (NOVO) --- */
+        .imob-sub-nav {
+            display: flex;
+            border-bottom: 2px solid #e5e7eb; /* gray-200 */
+        }
+        .imob-sub-btn {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.75rem 1rem; /* 12px 16px */
+            font-size: 0.95rem;
+            font-weight: 600;
+            border: none;
+            background: none;
+            cursor: pointer;
+            color: #6b7280; /* gray-500 */
+            border-bottom: 3px solid transparent;
+            transform: translateY(2px); /* Alinha com a borda inferior */
+            transition: all 0.2s ease;
+        }
+        .imob-sub-btn:hover {
+            color: #1f2937; /* gray-800 */
+            background-color: #f9fafb; /* gray-50 */
+        }
+        .imob-sub-btn.active {
+            color: var(--accent); /* Cor principal do app */
+            border-bottom-color: var(--accent);
+        }
+        .imob-sub-panel {
+            display: none; /* Escondido por padrão */
+        }
+        .imob-sub-panel.active {
+            display: block; /* Visível */
+            animation: fadeIn 0.4s ease-out; /* Reutiliza a animação existente */
+        }
+        /* Ajuste para o painel do Looker preencher a tela */
+        #imobSubPanel_Panel .info-card {
+            height: 100vh; /* Altura total da viewport */
+            max-height: calc(100vh - 200px); /* Ajuste para não estourar */
+        }
     </style>
     <!-- ====================================================== -->
 
@@ -76,13 +116,7 @@
                     </a>
                     
                     <!-- ====================================================== -->
-                    <!-- <<< INÍCIO DA ATUALIZAÇÃO: OnClick com chave 'imob' >>> -->
-                    <!-- ====================================================== -->
-                    <a href="#looker" class="nav-item" title="Visualizar Painel IMOB" onclick="window.GG.showView('lookerView', this, 'imob')">
-                        <i data-feather="trello" class="h-5 w-5 mr-3"></i> <span class="nav-text">Painel IMOB (Looker)</span>
-                    </a>
-                    <!-- ====================================================== -->
-                    <!-- <<< FIM DA ATUALIZAÇÃO >>> -->
+                    <!-- <<< ATUALIZAÇÃO: Link "Painel IMOB (Looker)" REMOVIDO daqui >>> -->
                     <!-- ====================================================== -->
                     
                     <div class="mt-4 border-t border-gray-700 pt-2">
@@ -177,38 +211,28 @@
                     -->
                     <div id="imobView" class="view-content">
                         
+                        <h1 class="text-2xl font-semibold text-gray-800 mb-6">Upload em Lote - Painel IMOB</h1>
+                        
                         <!-- ====================================================== -->
-                        <!-- ADICIONADO "imobUploaderForm" PARA ESCONDER/MOSTRAR -->
+                        <!-- <<< ATUALIZAÇÃO: Adicionando Sub-Abas >>> -->
                         <!-- ====================================================== -->
-                        <div id="imobUploaderForm" style="display: block;">
-                            <h1 class="text-2xl font-semibold text-gray-800 mb-6">Upload em Lote - Painel IMOB</h1>
-                            
-                            <!-- Etapa 1: Filtros (Não precisa mais de conexão) -->
-                            <div class="info-card mb-6">
-                                <h2 class="text-xl font-semibold mb-4 text-gray-700">1. Filtros de Inserção</h2>
-                                <p class="text-sm text-gray-600 mb-4">
-                                    Preencha os valores que serão aplicados a todas as linhas novas.
-                                </p>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div>
-                                        <label for="filterEmpresa" class="block text-sm font-medium text-gray-600">Empresa (Filial)</label>
-                                        <!-- <<< MODIFICADO: input para select >>> -->
-                                        <select id="filterEmpresa" class="form-input">
-                                            <option value="">Carregando empresas...</option>
-                                        </select>
-                                        <p class="text-xs text-gray-500 mt-1">Selecione a Empresa/Filial.</p>
-                                    </div>
-                                    <div>
-                                        <label for="filterProduto" class="block text-sm font-medium text-gray-600">Produto</label>
-                                        <!-- <<< MODIFICADO: input para select >>> -->
-                                        <select id="filterProduto" class="form-input">
-                                            <option value="">Carregando produtos...</option>
-                                        </select>
-                                        <p class="text-xs text-gray-500 mt-1">Selecione o produto a ser aplicado.</p>
-                                    </div>
-                                </div>
-                            </div>
+                        <div class="imob-sub-nav mb-6">
+                            <button id="imobSubTab_Update" class="imob-sub-btn active">
+                                <i data-feather="upload" class="h-4 w-4 mr-2"></i> Atualizar Dados
+                            </button>
+                            <button id="imobSubTab_Panel" class="imob-sub-btn">
+                                <i data-feather="trello" class="h-4 w-4 mr-2"></i> Visualizar Painel
+                            </button>
+                        </div>
+                        <!-- ====================================================== -->
 
+                        <!-- ====================================================== -->
+                        <!-- <<< ATUALIZAÇÃO: Painel de Atualização >>> -->
+                        <!-- (Todo o conteúdo de upload antigo vai aqui dentro) -->
+                        <!-- ====================================================== -->
+                        <div id="imobSubPanel_Update" class="imob-sub-panel active">
+                            <!-- ====================================================== -->
+                            <!-- ADICIONADO "imobUploaderForm" PARA ESCONDER/MOSTRAR -->
                             <!-- ====================================================== -->
                             <!-- <<< INÍCIO DA ATUALIZAÇÃO: ABAS DE COLAR/IMPORTAR >>> -->
                             <!-- ====================================================== -->
@@ -253,47 +277,28 @@
                             <!-- ====================================================== -->
 
 
-                            <!-- Etapa 3: Prévia -->
-                            <div id="previewSection" class="info-card hidden">
-                                <h2 class="text-xl font-semibold mb-4 text-gray-700">3. Prévia dos Dados para Inserção</h2>
-                                <p id="previewSummary" class="text-sm text-gray-600 mb-4"></p>
-                                <div class="overflow-x-auto max-h-96 border border-gray-200 rounded-md">
-                                    <table class="min-w-full divide-y divide-gray-200">
-                                        <thead class="bg-gray-50">
-                                            <tr id="previewHeader"></tr>
-                                        </thead>
-                                        <tbody id="previewBody" class="bg-white divide-y divide-gray-200"></tbody>
-                                    </table>
-                                </div>
-                                <button id="insertButton" class="btn btn-success w-full mt-6 disabled:opacity-50">
-                                    <i data-feather="database" class="h-4 w-4 mr-2"></i> Confirmar e Inserir Linhas no Banco
-                                </button>
-                                <p id="insertStatus" class="text-sm text-center text-gray-500 mt-4"></p>
-                            </div>
                         </div>
+                        <!-- ====================================================== -->
+                        <!-- <<< FIM DO PAINEL DE ATUALIZAÇÃO >>> -->
+                        <!-- ====================================================== -->
+
 
                         <!-- ====================================================== -->
-                        <!-- AJUSTE FEITO AQUI: Bloco da tela de sucesso adicionado -->
+                        <!-- <<< ATUALIZAÇÃO: Painel de Visualização (Looker) >>> -->
                         <!-- ====================================================== -->
-                        <div id="imobSuccessScreen" class="success-animation-container" style="display: none;">
-                            <div class="success-icon">
-                                <div class="circle"></div>
-                                <div class="checkmark"></div>
-                            </div>
-                            <h2 class="text-2xl font-semibold text-gray-800 mb-2">Inserção Concluída!</h2>
-                            <p class="text-gray-600 mb-8">Os dados foram enviados com sucesso para o banco do B.I.</p>
-                            
-                            <div class="flex flex-col sm:flex-row gap-4">
-                                <button id="imobSuccessAgainBtn" class="btn btn-secondary w-full sm:w-auto">
-                                    <i data-feather="upload" class="h-4 w-4 mr-2"></i> Inserir Novo Lote
-                                </button>
-                                <button id="imobSuccessHomeBtn" class="btn btn-primary w-full sm:w-auto">
-                                    <i data-feather="home" class="h-4 w-4 mr-2"></i> Voltar para Home
-                                </button>
+                        <div id="imobSubPanel_Panel" class="imob-sub-panel">
+                            <div class="info-card p-0" style="overflow: hidden; height: 100vh;">
+                                <iframe 
+                                    id="imobLookerIframe"
+                                    class="looker-iframe"
+                                    src="" 
+                                    frameborder="0"
+                                    allowfullscreen>
+                                </iframe>
                             </div>
                         </div>
                         <!-- ====================================================== -->
-                        <!-- FIM DO AJUSTE -->
+                        <!-- <<< FIM DO PAINEL DE VISUALIZAÇÃO >>> -->
                         <!-- ====================================================== -->
 
 
