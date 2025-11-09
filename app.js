@@ -137,7 +137,7 @@ window.GG = {};
         if (!supabase) return;
         GG.showLoading(true, 'Saindo...');
         await supabase.auth.signOut();
-        window.location.href = 'login.html';
+        window.location.href = 'index.html'; // Corrigido de login.html para index.html (onde está o login)
     };
 
 
@@ -174,7 +174,7 @@ window.GG = {};
             // Erro crítico (API Vercel fora do ar, etc.)
             // Não podemos checar auth, então redirecionamos para o login com erro
             console.error('Erro de conexão:', error);
-            window.location.href = `login.html?error=${encodeURIComponent(error.message)}`;
+            window.location.href = `index.html?error=${encodeURIComponent(error.message)}`; // Corrigido de login.html
         }
     }
 
@@ -186,7 +186,7 @@ window.GG = {};
         
         if (!session) {
             // Não há sessão, manda para o login
-            window.location.href = 'login.html';
+            window.location.href = 'index.html'; // Corrigido de login.html
         } else {
             // Usuário está logado, pode carregar o app
             console.log('Sessão autenticada encontrada.', session.user.email);
@@ -200,6 +200,10 @@ window.GG = {};
             // INICIALIZA O APP SHELL
             initAppShell();
             initImobUploader();
+            
+            // <<< ADICIONADO: Popula os dropdowns de filtro >>>
+            populateDropdowns(); 
+            
             GG.showView('homeView', document.querySelector('a[href="#home"]'));
         }
     }
@@ -236,6 +240,11 @@ window.GG = {};
         document.getElementById('imobUploaderForm').style.display = 'block';
         document.getElementById('imobSuccessScreen').style.display = 'none';
         document.getElementById('dataInput').value = '';
+        
+        // <<< ADICIONADO: Reseta os dropdowns >>>
+        document.getElementById('filterEmpresa').value = '';
+        document.getElementById('filterProduto').value = '';
+        
         document.getElementById('previewSection').classList.add('hidden');
         document.getElementById('insertStatus').textContent = '';
         globalRowsToInsert = [];
@@ -255,7 +264,7 @@ window.GG = {};
             return;
         }
         if (!selectedEmpresa || !selectedProduto) {
-            previewSummary.textContent = 'Preencha a Empresa e o Produto.';
+            previewSummary.textContent = 'Selecione a Empresa e o Produto.'; // Mensagem atualizada
             return;
         }
 
@@ -419,6 +428,60 @@ window.GG = {};
     }
 
     // --- 4. FUNÇÕES UTILITÁRIAS (IMOB) ---
+
+    // ======================================================
+    // <<< NOVA FUNÇÃO ADICIONADA >>>
+    // ======================================================
+    /**
+     * Busca dados das tabelas 'empresas' e 'produtos' e popula os dropdowns.
+     */
+    async function populateDropdowns() {
+        const empresaSelect = document.getElementById('filterEmpresa');
+        const produtoSelect = document.getElementById('filterProduto');
+
+        try {
+            // Buscar Empresas
+            const { data: empresas, error: empresaError } = await supabase
+                .from('empresas')
+                .select('codigo_empresa, nome_empresa')
+                .order('nome_empresa', { ascending: true }); // Ordena alfabeticamente
+
+            if (empresaError) throw empresaError;
+
+            empresaSelect.innerHTML = '<option value="">Selecione uma Empresa</option>'; // Limpa o "Carregando..."
+            empresas.forEach(empresa => {
+                const option = document.createElement('option');
+                option.value = empresa.codigo_empresa; // Ex: "101"
+                option.textContent = empresa.nome_empresa; // Ex: "101 - Filial Cuiabá"
+                empresaSelect.appendChild(option);
+            });
+
+            // Buscar Produtos
+            const { data: produtos, error: produtoError } = await supabase
+                .from('produtos')
+                .select('nome_produto')
+                .order('nome_produto', { ascending: true }); // Ordena alfabeticamente
+
+            if (produtoError) throw produtoError;
+
+            produtoSelect.innerHTML = '<option value="">Selecione um Produto</option>'; // Limpa o "Carregando..."
+            produtos.forEach(produto => {
+                const option = document.createElement('option');
+                option.value = produto.nome_produto; // Ex: "PALLET"
+                option.textContent = produto.nome_produto; // Ex: "PALLET"
+                produtoSelect.appendChild(option);
+            });
+
+        } catch (error) {
+            console.error('Erro ao popular dropdowns:', error);
+            // Informa o usuário sobre o erro nos próprios selects
+            empresaSelect.innerHTML = `<option value="">Erro ao carregar empresas</option>`;
+            produtoSelect.innerHTML = `<option value="">Erro ao carregar produtos</option>`;
+        }
+    }
+    // ======================================================
+    // <<< FIM DA NOVA FUNÇÃO >>>
+    // ======================================================
 
     function parsePastedData(text) {
         const rows = text.trim().split('\n');
