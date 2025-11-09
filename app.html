@@ -152,13 +152,19 @@
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div>
                                         <label for="filterEmpresa" class="block text-sm font-medium text-gray-600">Empresa (Filial)</label>
-                                        <input type="text" id="filterEmpresa" placeholder="Ex: 101" class="form-input">
-                                        <p class="text-xs text-gray-500 mt-1">Digite o ID da Empresa/Filial.</p>
+                                        <!-- <<< MODIFICADO: input para select >>> -->
+                                        <select id="filterEmpresa" class="form-input">
+                                            <option value="">Carregando empresas...</option>
+                                        </select>
+                                        <p class="text-xs text-gray-500 mt-1">Selecione a Empresa/Filial.</p>
                                     </div>
                                     <div>
                                         <label for="filterProduto" class="block text-sm font-medium text-gray-600">Produto</label>
-                                        <input type="text" id="filterProduto" placeholder="Ex: PALLET" class="form-input">
-                                        <p class="text-xs text-gray-500 mt-1">Este produto será aplicado a todas as linhas.</p>
+                                        <!-- <<< MODIFICADO: input para select >>> -->
+                                        <select id="filterProduto" class="form-input">
+                                            <option value="">Carregando produtos...</option>
+                                        </select>
+                                        <p class="text-xs text-gray-500 mt-1">Selecione o produto a ser aplicado.</p>
                                     </div>
                                 </div>
                             </div>
