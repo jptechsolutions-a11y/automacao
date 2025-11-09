@@ -35,6 +35,18 @@ window.GG = {};
         'data2': 'timestamp'
     };
 
+    /**
+     * Mostra/Esconde a tela de Loading
+     */
+    GG.showLoading = (show, text = 'Processando...') => {
+        const loadingEl = document.getElementById('loading');
+        if (show) {
+            loadingEl.querySelector('p').textContent = text;
+            loadingEl.style.display = 'flex';
+        } else {
+            loadingEl.style.display = 'none';
+        }
+    };
 
     // --- 1. LÓGICA DO APP SHELL (UI) ---
 
@@ -46,9 +58,25 @@ window.GG = {};
         const sidebarToggle = document.getElementById('sidebarToggle');
         const sidebarOverlay = document.getElementById('sidebarOverlay');
 
-        // Lógica do Toggle da Sidebar
+        // ATUALIZADO: Lógica de Toggle (Mobile e Desktop)
         sidebarToggle.addEventListener('click', () => {
-            sidebar.classList.toggle('collapsed');
+            const icon = sidebarToggle.querySelector('i');
+            if (window.innerWidth <= 768) {
+                // Lógica Mobile (Slide)
+                document.body.classList.add('sidebar-open');
+                icon.setAttribute('data-feather', 'x'); // Mudar para 'x'
+            } else {
+                // Lógica Desktop (Collapse)
+                sidebar.classList.toggle('collapsed');
+            }
+            feather.replace(); // Atualiza o ícone
+        });
+
+        // ATUALIZADO: Fechar sidebar mobile ao clicar no overlay
+        sidebarOverlay.addEventListener('click', () => {
+            document.body.classList.remove('sidebar-open');
+            sidebarToggle.querySelector('i').setAttribute('data-feather', 'menu'); // Mudar de volta
+            feather.replace();
         });
 
         // Lógica de Navegação (clique nos links)
@@ -58,11 +86,17 @@ window.GG = {};
                     e.preventDefault();
                     return;
                 }
+                // Fecha a sidebar no mobile ao clicar num item
+                if (window.innerWidth <= 768) {
+                    document.body.classList.remove('sidebar-open');
+                    sidebarToggle.querySelector('i').setAttribute('data-feather', 'menu');
+                    feather.replace();
+                }
                 // A troca de view é feita pelo atributo onclick no HTML
             });
         });
 
-        // Habilita ícones do Feather
+        // Habilita ícones do Feather (inicial)
         feather.replace();
     }
 
@@ -77,7 +111,10 @@ window.GG = {};
             view.classList.remove('active');
         });
         // Mostra a view correta
-        document.getElementById(viewId).classList.add('active');
+        const viewToShow = document.getElementById(viewId);
+        if (viewToShow) {
+            viewToShow.classList.add('active');
+        }
 
         // Atualiza o estado 'active' no menu
         document.querySelectorAll('.nav-item').forEach(item => {
@@ -86,7 +123,22 @@ window.GG = {};
         if (clickedItem) {
             clickedItem.classList.add('active');
         }
-    }
+
+        // Reseta a view do IMOB se sair dela
+        if (viewId !== 'imobView') {
+            resetImobView();
+        }
+    };
+
+    /**
+     * Função de Logout
+     */
+    GG.logout = async () => {
+        if (!supabase) return;
+        GG.showLoading(true, 'Saindo...');
+        await supabase.auth.signOut();
+        window.location.href = 'login.html';
+    };
 
 
     // --- 2. LÓGICA DE CONEXÃO E API (SUPABASE) ---
@@ -95,9 +147,6 @@ window.GG = {};
      * Busca as chaves da API do Vercel e inicializa o Supabase.
      */
     async function initSupabase() {
-        const statusEl = document.getElementById('textoStatus');
-        const statusContainer = document.getElementById('statusConexao');
-
         try {
             // Chama a API que você criou no Vercel (api/config.js)
             const response = await fetch('/api/config');
@@ -114,21 +163,44 @@ window.GG = {};
             supabase = window.supabase.createClient(keys.SUPABASE_URL, keys.SUPABASE_ANON_KEY);
             
             if (supabase) {
-                console.log('Supabase conectado com sucesso.');
-                statusEl.innerHTML = '<i data-feather="check-circle" class="h-4 w-4 mr-2"></i> Conectado ao B.I. com sucesso!';
-                statusContainer.setAttribute('data-status', 'conectado');
-                // Habilita os botões que dependem da conexão
-                document.getElementById('processButton').disabled = false;
+                console.log('Supabase client inicializado.');
+                // Retorna a promessa da verificação de sessão
+                return checkAuthSession(); 
             } else {
                 throw new Error("Falha ao inicializar o cliente Supabase.");
             }
 
         } catch (error) {
+            // Erro crítico (API Vercel fora do ar, etc.)
+            // Não podemos checar auth, então redirecionamos para o login com erro
             console.error('Erro de conexão:', error);
-            statusEl.innerHTML = `<i data-feather="alert-triangle" class="h-4 w-4 mr-2"></i> Erro: ${error.message}`;
-            statusContainer.setAttribute('data-status', 'erro');
-        } finally {
-            feather.replace(); // Re-renderiza ícones trocados
+            window.location.href = `login.html?error=${encodeURIComponent(error.message)}`;
+        }
+    }
+
+    /**
+     * Verifica se o usuário tem uma sessão ativa.
+     */
+    async function checkAuthSession() {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session) {
+            // Não há sessão, manda para o login
+            window.location.href = 'login.html';
+        } else {
+            // Usuário está logado, pode carregar o app
+            console.log('Sessão autenticada encontrada.', session.user.email);
+            
+            const statusEl = document.getElementById('textoStatus');
+            const statusContainer = document.getElementById('statusConexao');
+            statusEl.innerHTML = '<i data-feather="check-circle" class="h-4 w-4 mr-2"></i> Conectado ao B.I. com sucesso!';
+            statusContainer.setAttribute('data-status', 'conectado');
+            document.getElementById('processButton').disabled = false;
+
+            // INICIALIZA O APP SHELL
+            initAppShell();
+            initImobUploader();
+            GG.showView('homeView', document.querySelector('a[href="#home"]'));
         }
     }
 
@@ -144,6 +216,29 @@ window.GG = {};
 
         processButton.addEventListener('click', handleProcessData);
         insertButton.addEventListener('click', handleInsertData);
+
+        // Botões da tela de sucesso
+        document.getElementById('imobSuccessHomeBtn').addEventListener('click', () => {
+            GG.showView('homeView', document.querySelector('a[href="#home"]'));
+            // resetImobView() é chamado pelo showView
+        });
+
+        document.getElementById('imobSuccessAgainBtn').addEventListener('click', () => {
+            // Apenas reseta a view do IMOB
+            resetImobView();
+        });
+    }
+
+    /**
+     * Reseta a view do uploader para o estado inicial.
+     */
+    function resetImobView() {
+        document.getElementById('imobUploaderForm').style.display = 'block';
+        document.getElementById('imobSuccessScreen').style.display = 'none';
+        document.getElementById('dataInput').value = '';
+        document.getElementById('previewSection').classList.add('hidden');
+        document.getElementById('insertStatus').textContent = '';
+        globalRowsToInsert = [];
     }
 
     /**
@@ -154,7 +249,6 @@ window.GG = {};
         const rawData = document.getElementById('dataInput').value;
         const selectedEmpresa = document.getElementById('filterEmpresa').value;
         const selectedProduto = document.getElementById('filterProduto').value;
-        const processButton = document.getElementById('processButton');
 
         if (!rawData) {
             previewSummary.textContent = 'Nenhum dado colado.';
@@ -165,12 +259,10 @@ window.GG = {};
             return;
         }
 
-        processButton.disabled = true;
-        processButton.innerHTML = '<i data-feather="refresh-cw" class="animate-spin h-4 w-4 mr-2"></i> Processando...';
-        feather.replace(); // Atualiza o ícone de spin
-
+        GG.showLoading(true, 'Processando e validando...');
         previewSummary.textContent = 'Lendo dados e validando no banco...';
         document.getElementById('previewSection').classList.remove('hidden');
+        document.getElementById('insertStatus').textContent = '';
 
         try {
             // 1. Parsear
@@ -282,8 +374,7 @@ window.GG = {};
             console.error('Erro no processamento:', error);
             previewSummary.textContent = `Erro: ${error.message}`;
         } finally {
-            processButton.disabled = false;
-            processButton.innerHTML = '<i data-feather="refresh-cw" class="h-4 w-4 mr-2"></i> Processar e Validar Dados';
+            GG.showLoading(false);
             feather.replace();
         }
     }
@@ -292,7 +383,6 @@ window.GG = {};
      * Pega as linhas processadas e insere no Supabase.
      */
     async function handleInsertData() {
-        const insertButton = document.getElementById('insertButton');
         const statusEl = document.getElementById('insertStatus');
 
         if (globalRowsToInsert.length === 0) {
@@ -300,27 +390,30 @@ window.GG = {};
             return;
         }
 
-        insertButton.disabled = true;
-        insertButton.innerHTML = '<i data-feather="refresh-cw" class="animate-spin h-4 w-4 mr-2"></i> Inserindo...';
-        feather.replace();
+        GG.showLoading(true, `Inserindo ${globalRowsToInsert.length} linhas...`);
         statusEl.textContent = `Enviando ${globalRowsToInsert.length} linhas para o Supabase...`;
 
         try {
             const { error } = await supabase.from('imob').insert(globalRowsToInsert);
             if (error) throw error;
 
-            statusEl.textContent = `${globalRowsToInsert.length} linhas inseridas com sucesso!`;
-            // Limpa tudo
+            // ATUALIZADO: Mostrar tela de sucesso
+            document.getElementById('imobUploaderForm').style.display = 'none';
+            document.getElementById('imobSuccessScreen').style.display = 'flex';
+            feather.replace(); // Para os ícones dos botões de sucesso
+
+            // Limpa tudo (agora feito pelo resetImobView)
             globalRowsToInsert = [];
             document.getElementById('dataInput').value = '';
             document.getElementById('previewSection').classList.add('hidden');
+            statusEl.textContent = '';
+
 
         } catch (error) {
             console.error('Erro na inserção:', error);
             statusEl.textContent = `Erro ao inserir: ${error.message}`;
         } finally {
-            insertButton.disabled = false;
-            insertButton.innerHTML = '<i data-feather="database" class="h-4 w-4 mr-2"></i> Confirmar e Inserir Linhas no Banco';
+            GG.showLoading(false);
             feather.replace();
         }
     }
@@ -369,6 +462,7 @@ window.GG = {};
             return;
         }
 
+        // Usa as colunas do primeiro objeto de dados, que inclui as colunas geradas
         const columns = Object.keys(rows[0]);
         columns.forEach(col => {
             header.innerHTML += `<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">${col}</th>`;
@@ -377,7 +471,8 @@ window.GG = {};
         rows.forEach(row => {
             let rowHtml = '<tr>';
             columns.forEach(col => {
-                const isModified = (col === 'Emp' || col === 'Produto' || col === 'loja' || col === 'Segmento');
+                // Colunas modificadas/adicionadas
+                const isModified = (col === 'Emp' || col === 'Produto' || col === 'loja' || col === 'Segmento' || col === 'ano' || col === 'ID' || col === 'fornecedor');
                 rowHtml += `<td class="px-4 py-3 whitespace-nowrap text-sm ${isModified ? 'bg-yellow-100 font-medium' : 'text-gray-700'}">${row[col] !== null ? row[col] : ''}</td>`;
             });
             rowHtml += '</tr>';
@@ -388,12 +483,10 @@ window.GG = {};
 
     // --- 5. INICIALIZAÇÃO DO APP ---
     document.addEventListener('DOMContentLoaded', () => {
-        initAppShell();
-        initSupabase(); // Conecta ao Supabase ao carregar
-        initImobUploader(); // Prepara os botões do uploader
-        
-        // Define a view inicial
-        GG.showView('homeView', document.querySelector('a[href="#home"]'));
+        // Apenas inicia o processo de auth. O resto é chamado por checkAuthSession()
+        // Oculta o app shell até o auth ser verificado
+        document.getElementById('appShell').style.display = 'flex';
+        initSupabase();
     });
 
 })(window.GG);
