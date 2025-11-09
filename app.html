@@ -76,9 +76,9 @@
                     </a>
                     
                     <!-- ====================================================== -->
-                    <!-- <<< INÍCIO DA ATUALIZAÇÃO: LINK DO PAINEL LOOKER >>> -->
+                    <!-- <<< INÍCIO DA ATUALIZAÇÃO: OnClick com chave 'imob' >>> -->
                     <!-- ====================================================== -->
-                    <a href="#looker" class="nav-item" title="Visualizar Painel IMOB" onclick="window.GG.showView('lookerView', this)">
+                    <a href="#looker" class="nav-item" title="Visualizar Painel IMOB" onclick="window.GG.showView('lookerView', this, 'imob')">
                         <i data-feather="trello" class="h-5 w-5 mr-3"></i> <span class="nav-text">Painel IMOB (Looker)</span>
                     </a>
                     <!-- ====================================================== -->
@@ -90,8 +90,15 @@
                     </div>
                     
                     <a href="#" class="nav-item disabled" title="Em breve">
-                        <i data-feather="bar-chart-2" class="h-5 w-5 mr-3"></i> <span class="nav-text">Painel Vendas</span>
+                        <i data-feather="bar-chart-2" class="h-5 w-5 mr-3"></i> <span class="nav-text">Upload Vendas</span>
                     </a>
+                    <!-- ====================================================== -->
+                    <!-- <<< ADICIONADO: Exemplo de futuro painel de vendas >>> -->
+                    <!-- ====================================================== -->
+                    <a href="#lookerVendas" class="nav-item disabled" title="Em breve" onclick="window.GG.showView('lookerView', this, 'vendas')">
+                        <i data-feather="dollar-sign" class="h-5 w-5 mr-3"></i> <span class="nav-text">Painel Vendas (Looker)</span>
+                    </a>
+                    <!-- ====================================================== -->
                     <a href="#" class="nav-item disabled" title="Em breve">
                         <i data-feather="clock" class="h-5 w-5 mr-3"></i> <span class="nav-text">Em Criação...</span>
                     </a>
@@ -283,14 +290,14 @@
                     </div>
 
                     <!-- ====================================================== -->
-                    <!-- <<< INÍCIO DA ATUALIZAÇÃO: VIEW DO PAINEL LOOKER >>> -->
+                    <!-- <<< INÍCIO DA ATUALIZAÇÃO: Título dinâmico >>> -->
                     <!-- ====================================================== -->
                     <!-- 
                         View 3: Looker Dashboard (NOVA) 
                         Tela para incorporar o painel do Looker.
                     -->
                     <div id="lookerView" class="view-content" style="display: none;">
-                        <h1 class="text-2xl font-semibold text-gray-800 mb-6">Visualização do Painel IMOB</h1>
+                        <h1 id="lookerTitle" class="text-2xl font-semibold text-gray-800 mb-6">Carregando Painel...</h1>
                         
                         <!-- 
                             O card abaixo usa p-0 (sem padding) e overflow-hidden 
@@ -305,7 +312,7 @@
                             <iframe 
                                 id="lookerIframe"
                                 class="looker-iframe"
-                                src="https://YOUR-LOOKER-EMBED-URL-HERE" 
+                                src="" 
                                 frameborder="0"
                                 allowfullscreen>
                             </iframe>
