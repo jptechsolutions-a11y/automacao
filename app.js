@@ -282,15 +282,37 @@ window.GG = {};
                 throw new Error("Nenhum 'SEQMOVIMENTAÇÃO' válido encontrado.");
             }
 
-            // 2. Validar Duplicados
-            const { data: existingRows, error } = await supabase
-                .from('imob')
-                .select('SEQMOVIMENTAÇÃO')
-                .in('SEQMOVIMENTAÇÃO', seqList);
-            if (error) throw error;
-            const existingSeqSet = new Set(existingRows.map(row => String(row['SEQMOVIMENTAÇÃO'])));
+            // ======================================================
+            // <<< MUDANÇA: Verificação de duplicados em lotes (Chunking) >>>
+            // ======================================================
+            GG.showLoading(true, 'Verificando duplicados no banco...');
+            const existingSeqSet = new Set();
+            const CHUNK_SIZE = 500; // Define o tamanho do lote
+            
+            for (let i = 0; i < seqList.length; i += CHUNK_SIZE) {
+                const chunk = seqList.slice(i, i + CHUNK_SIZE);
+                
+                // Atualiza o status para o usuário
+                GG.showLoading(true, `Verificando duplicados... (${i + chunk.length}/${seqList.length})`);
+
+                const { data: existingRows, error } = await supabase
+                    .from('imob')
+                    .select('SEQMOVIMENTAÇÃO')
+                    .in('SEQMOVIMENTAÇÃO', chunk);
+                
+                if (error) throw error;
+                
+                // Adiciona os IDs encontrados ao Set
+                existingRows.forEach(row => {
+                    existingSeqSet.add(String(row['SEQMOVIMENTAÇÃO']));
+                });
+            }
+            // ======================================================
+            // <<< FIM DA MUDANÇA >>>
+            // ======================================================
             
             // 3. Filtrar novos
+            GG.showLoading(true, 'Filtrando dados...');
             const newRows = allParsedRows.filter(row => {
                 const seq = String(row['SEQMOVIMENTAÇÃO']);
                 return seq && !existingSeqSet.has(seq);
@@ -311,18 +333,27 @@ window.GG = {};
 
             if (uniqueIds.length > 0) {
                 previewSummary.textContent = 'Validando IDs... buscando lojas e segmentos...';
-                const { data: lojasData, error: lojasError } = await supabase
-                    .from('lojas')
-                    .select('id, nome_loja, segmento')
-                    .in('id', uniqueIds);
-                if (lojasError) throw new Error(`Erro ao buscar 'lojas': ${lojasError.message}`);
+                GG.showLoading(true, 'Buscando lojas e segmentos...'); // <<< Feedback adicionado
                 
-                lojasData.forEach(item => {
-                    lojaLookup.set(String(item.id), { loja: item.nome_loja, segmento: item.segmento });
-                });
+                // <<< MUDANÇA: PROCV também em lotes (para garantir) >>>
+                // Embora 17k de IDs de fornecedor sejam improváveis, é uma boa prática.
+                for (let i = 0; i < uniqueIds.length; i += CHUNK_SIZE) {
+                    const chunk = uniqueIds.slice(i, i + CHUNK_SIZE);
+                    const { data: lojasData, error: lojasError } = await supabase
+                        .from('lojas')
+                        .select('id, nome_loja, segmento')
+                        .in('id', chunk);
+                    
+                    if (lojasError) throw new Error(`Erro ao buscar 'lojas': ${lojasError.message}`);
+                    
+                    lojasData.forEach(item => {
+                        lojaLookup.set(String(item.id), { loja: item.nome_loja, segmento: item.segmento });
+                    });
+                }
             }
 
             // 5. Aplicar Fórmulas e Tipos
+            GG.showLoading(true, 'Aplicando fórmulas e tratando dados...'); // <<< Feedback adicionado
             globalRowsToInsert = newRows.map(row => {
                 // Filtros
                 row['Emp'] = selectedEmpresa;
@@ -399,23 +430,44 @@ window.GG = {};
             return;
         }
 
-        GG.showLoading(true, `Inserindo ${globalRowsToInsert.length} linhas...`);
-        statusEl.textContent = `Enviando ${globalRowsToInsert.length} linhas para o Supabase...`;
+        // ======================================================
+        // <<< MUDANÇA: Inserção em Lotes (Chunking) >>>
+        // ======================================================
+        const CHUNK_SIZE = 500; // Tamanho do lote de inserção
+        const totalLotes = Math.ceil(globalRowsToInsert.length / CHUNK_SIZE);
+        
+        statusEl.textContent = `Preparando para inserir ${globalRowsToInsert.length} linhas em ${totalLotes} lotes...`;
 
         try {
-            const { error } = await supabase.from('imob').insert(globalRowsToInsert);
-            if (error) throw error;
+            for (let i = 0; i < globalRowsToInsert.length; i += CHUNK_SIZE) {
+                const chunk = globalRowsToInsert.slice(i, i + CHUNK_SIZE);
+                const loteAtual = (i / CHUNK_SIZE) + 1;
 
-            // ATUALIZADO: Mostrar tela de sucesso
+                // Atualiza o loading com o progresso
+                GG.showLoading(true, `Enviando lote ${loteAtual} de ${totalLotes}... (${chunk.length} linhas)`);
+                statusEl.textContent = `Enviando lote ${loteAtual} de ${totalLotes}...`;
+
+                const { error } = await supabase.from('imob').insert(chunk);
+                
+                if (error) {
+                    // Se der erro, joga o erro e para o loop
+                    throw new Error(`Erro no lote ${loteAtual}: ${error.message}`);
+                }
+            }
+            // ======================================================
+            // <<< FIM DA MUDANÇA >>>
+            // ======================================================
+
+            // Se o loop terminar sem erros, mostra a tela de sucesso
             document.getElementById('imobUploaderForm').style.display = 'none';
             document.getElementById('imobSuccessScreen').style.display = 'flex';
             feather.replace(); // Para os ícones dos botões de sucesso
 
-            // Limpa tudo (agora feito pelo resetImobView)
+            // Limpa tudo
             globalRowsToInsert = [];
             document.getElementById('dataInput').value = '';
             document.getElementById('previewSection').classList.add('hidden');
-            statusEl.textContent = '';
+            statusEl.textContent = 'Inserção concluída com sucesso!'; // Mensagem final
 
 
         } catch (error) {
