@@ -696,10 +696,16 @@ window.GG = {};
         const iframe = document.getElementById('imobLookerIframe');
         if (!iframe) return; // Sai se o iframe não existir
 
-        // Verifica se o painel já está carregado
+        // ======================================================
+        // <<< CORREÇÃO DO BUG (REMOÇÃO) >>>
+        // A verificação abaixo estava impedindo o iframe de recarregar
+        // caso a primeira tentativa falhasse. Foi removida.
+        /*
         if (iframe.src && iframe.src !== "" && iframe.src !== "about:blank") {
             return; // Já carregado, não faz nada
         }
+        */
+        // ======================================================
 
         if (globalPanelConfig.has('imob')) {
             const panelData = globalPanelConfig.get('imob');
