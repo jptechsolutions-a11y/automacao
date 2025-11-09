@@ -372,23 +372,36 @@ window.GG = {};
 
             // ======================================================
             // <<< MUDANÇA: Verificação de duplicados em lotes (Chunking) >>>
+            // ATUALIZAÇÃO: As consultas agora são feitas em paralelo, não em série.
             // ======================================================
             GG.showLoading(true, 'Verificando duplicados no banco...');
             const existingSeqSet = new Set();
             const CHUNK_SIZE = 500; // Define o tamanho do lote
             
+            // 1. Criar um array de promessas
+            const duplicateCheckPromises = [];
             for (let i = 0; i < seqList.length; i += CHUNK_SIZE) {
                 const chunk = seqList.slice(i, i + CHUNK_SIZE);
                 
-                // Atualiza o status para o usuário
-                GG.showLoading(true, `Verificando duplicados... (${i + chunk.length}/${seqList.length})`);
+                // Atualiza o status para o usuário (só o primeiro)
+                if (i === 0) {
+                    GG.showLoading(true, `Verificando duplicados... (Enviando ${Math.ceil(seqList.length / CHUNK_SIZE)} lotes)`);
+                }
 
-                const { data: existingRows, error } = await supabase
-                    .from('imob')
-                    .select('SEQMOVIMENTAÇÃO')
-                    .in('SEQMOVIMENTAÇÃO', chunk);
-                
-                if (error) throw error;
+                duplicateCheckPromises.push(
+                    supabase
+                        .from('imob')
+                        .select('SEQMOVIMENTAÇÃO')
+                        .in('SEQMOVIMENTAÇÃO', chunk)
+                );
+            }
+
+            // 2. Executar todas as promessas em paralelo
+            const results = await Promise.all(duplicateCheckPromises);
+
+            // 3. Processar os resultados
+            for (const { data: existingRows, error } of results) {
+                if (error) throw error; // Se qualquer lote falhar, o processo para
                 
                 // Adiciona os IDs encontrados ao Set
                 existingRows.forEach(row => {
@@ -423,21 +436,34 @@ window.GG = {};
                 previewSummary.textContent = 'Validando IDs... buscando lojas e segmentos...';
                 GG.showLoading(true, 'Buscando lojas e segmentos...'); // <<< Feedback adicionado
                 
-                // <<< MUDANÇA: PROCV também em lotes (para garantir) >>>
-                // Embora 17k de IDs de fornecedor sejam improváveis, é uma boa prática.
+                // ======================================================
+                // <<< MUDANÇA: PROCV agora é em paralelo (Promise.all) >>>
+                // ======================================================
+                const lojaLookupPromises = [];
                 for (let i = 0; i < uniqueIds.length; i += CHUNK_SIZE) {
                     const chunk = uniqueIds.slice(i, i + CHUNK_SIZE);
-                    const { data: lojasData, error: lojasError } = await supabase
-                        .from('lojas')
-                        .select('id, nome_loja, segmento')
-                        .in('id', chunk);
-                    
+                    lojaLookupPromises.push(
+                        supabase
+                            .from('lojas')
+                            .select('id, nome_loja, segmento')
+                            .in('id', chunk)
+                    );
+                }
+
+                // Executa todas as buscas de "lojas" em paralelo
+                const lojaResults = await Promise.all(lojaLookupPromises);
+
+                // Processa os resultados
+                for (const { data: lojasData, error: lojasError } of lojaResults) {
                     if (lojasError) throw new Error(`Erro ao buscar 'lojas': ${lojasError.message}`);
                     
                     lojasData.forEach(item => {
                         lojaLookup.set(String(item.id), { loja: item.nome_loja, segmento: item.segmento });
                     });
                 }
+                // ======================================================
+                // <<< FIM DA MUDANÇA >>>
+                // ======================================================
             }
 
             // 5. Aplicar Fórmulas e Tipos
@@ -654,6 +680,14 @@ window.GG = {};
         const body = document.getElementById('previewBody');
         const summary = document.getElementById('previewSummary');
         
+        // ======================================================
+        // <<< INÍCIO DA ATUALIZAÇÃO: LIMITAR PRÉVIA >>>
+        // ======================================================
+        const PREVIEW_LIMIT = 100; // Limita a prévia a 100 linhas
+        // ======================================================
+        // <<< FIM DA ATUALIZAÇÃO >>>
+        // ======================================================
+        
         header.innerHTML = '';
         body.innerHTML = '';
 
@@ -665,13 +699,26 @@ window.GG = {};
             return;
         }
 
+        // ======================================================
+        // <<< INÍCIO DA ATUALIZAÇÃO: Adiciona nota sobre limite >>>
+        // ======================================================
+        if (rows.length > PREVIEW_LIMIT) {
+            summary.textContent += ` (Mostrando as primeiras ${PREVIEW_LIMIT} na prévia abaixo).`;
+        }
+        // ======================================================
+        // <<< FIM DA ATUALIZAÇÃO >>>
+        // ======================================================
+
         // Usa as colunas do primeiro objeto de dados, que inclui as colunas geradas
         const columns = Object.keys(rows[0]);
         columns.forEach(col => {
             header.innerHTML += `<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">${col}</th>`;
         });
 
-        rows.forEach(row => {
+        // ======================================================
+        // <<< INÍCIO DA ATUALIZAÇÃO: Aplica o .slice() para limitar >>>
+        // ======================================================
+        rows.slice(0, PREVIEW_LIMIT).forEach(row => {
             let rowHtml = '<tr>';
             columns.forEach(col => {
                 // Colunas modificadas/adicionadas
@@ -681,6 +728,9 @@ window.GG = {};
             rowHtml += '</tr>';
             body.innerHTML += rowHtml;
         });
+        // ======================================================
+        // <<< FIM DA ATUALIZAÇÃO >>>
+        // ======================================================
     }
 
 
