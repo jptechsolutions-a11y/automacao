@@ -18,6 +18,19 @@
     <!-- Libs (do seu modelo) -->
     <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- ====================================================== -->
+    <!-- <<< ESTILO ADICIONADO PARA O IFRAME DO LOOKER >>> -->
+    <!-- ====================================================== -->
+    <style>
+        .looker-iframe {
+            width: 100%;
+            height: 100%;
+            min-height: 80vh; /* Garante uma altura mínima */
+        }
+    </style>
+    <!-- ====================================================== -->
+
 </head>
 <body class="bg-gray-100">
 
@@ -61,6 +74,16 @@
                     <a href="#imob" class="nav-item" title="Upload Painel IMOB" onclick="window.GG.showView('imobView', this)">
                         <i data-feather="upload-cloud" class="h-5 w-5 mr-3"></i> <span class="nav-text">Upload IMOB</span>
                     </a>
+                    
+                    <!-- ====================================================== -->
+                    <!-- <<< INÍCIO DA ATUALIZAÇÃO: LINK DO PAINEL LOOKER >>> -->
+                    <!-- ====================================================== -->
+                    <a href="#looker" class="nav-item" title="Visualizar Painel IMOB" onclick="window.GG.showView('lookerView', this)">
+                        <i data-feather="trello" class="h-5 w-5 mr-3"></i> <span class="nav-text">Painel IMOB (Looker)</span>
+                    </a>
+                    <!-- ====================================================== -->
+                    <!-- <<< FIM DA ATUALIZAÇÃO >>> -->
+                    <!-- ====================================================== -->
                     
                     <div class="mt-4 border-t border-gray-700 pt-2">
                         <span class="p-3 text-xs font-semibold text-gray-500 uppercase nav-text">Outros Painéis</span>
@@ -258,6 +281,39 @@
 
 
                     </div>
+
+                    <!-- ====================================================== -->
+                    <!-- <<< INÍCIO DA ATUALIZAÇÃO: VIEW DO PAINEL LOOKER >>> -->
+                    <!-- ====================================================== -->
+                    <!-- 
+                        View 3: Looker Dashboard (NOVA) 
+                        Tela para incorporar o painel do Looker.
+                    -->
+                    <div id="lookerView" class="view-content" style="display: none;">
+                        <h1 class="text-2xl font-semibold text-gray-800 mb-6">Visualização do Painel IMOB</h1>
+                        
+                        <!-- 
+                            O card abaixo usa p-0 (sem padding) e overflow-hidden 
+                            para que o iframe ocupe todo o espaço.
+                        -->
+                        <div class="info-card p-0" style="overflow: hidden; height: 80vh;">
+                            <!-- 
+                                IMPORTANTE: 
+                                Substitua a URL abaixo pela URL de 'Embed' (incorporação) 
+                                pública ou assinada fornecida pelo seu painel do Looker.
+                            -->
+                            <iframe 
+                                id="lookerIframe"
+                                class="looker-iframe"
+                                src="https://YOUR-LOOKER-EMBED-URL-HERE" 
+                                frameborder="0"
+                                allowfullscreen>
+                            </iframe>
+                        </div>
+                    </div>
+                    <!-- ====================================================== -->
+                    <!-- <<< FIM DA ATUALIZAÇÃO >>> -->
+                    <!-- ====================================================== -->
 
                 </div>
             </main>
