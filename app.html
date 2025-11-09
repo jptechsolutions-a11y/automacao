@@ -136,57 +136,88 @@
                         Nosso uploader antigo, agora dentro da view.
                     -->
                     <div id="imobView" class="view-content">
-                        <h1 class="text-2xl font-semibold text-gray-800 mb-6">Upload em Lote - Painel IMOB</h1>
                         
-                        <!-- Etapa 1: Filtros (Não precisa mais de conexão) -->
-                        <div class="info-card mb-6">
-                            <h2 class="text-xl font-semibold mb-4 text-gray-700">1. Filtros de Inserção</h2>
-                            <p class="text-sm text-gray-600 mb-4">
-                                Preencha os valores que serão aplicados a todas as linhas novas.
-                            </p>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <label for="filterEmpresa" class="block text-sm font-medium text-gray-600">Empresa (Filial)</label>
-                                    <input type="text" id="filterEmpresa" placeholder="Ex: 101" class="form-input">
-                                    <p class="text-xs text-gray-500 mt-1">Digite o ID da Empresa/Filial.</p>
+                        <!-- ====================================================== -->
+                        <!-- ADICIONADO "imobUploaderForm" PARA ESCONDER/MOSTRAR -->
+                        <!-- ====================================================== -->
+                        <div id="imobUploaderForm" style="display: block;">
+                            <h1 class="text-2xl font-semibold text-gray-800 mb-6">Upload em Lote - Painel IMOB</h1>
+                            
+                            <!-- Etapa 1: Filtros (Não precisa mais de conexão) -->
+                            <div class="info-card mb-6">
+                                <h2 class="text-xl font-semibold mb-4 text-gray-700">1. Filtros de Inserção</h2>
+                                <p class="text-sm text-gray-600 mb-4">
+                                    Preencha os valores que serão aplicados a todas as linhas novas.
+                                </p>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label for="filterEmpresa" class="block text-sm font-medium text-gray-600">Empresa (Filial)</label>
+                                        <input type="text" id="filterEmpresa" placeholder="Ex: 101" class="form-input">
+                                        <p class="text-xs text-gray-500 mt-1">Digite o ID da Empresa/Filial.</p>
+                                    </div>
+                                    <div>
+                                        <label for="filterProduto" class="block text-sm font-medium text-gray-600">Produto</label>
+                                        <input type="text" id="filterProduto" placeholder="Ex: PALLET" class="form-input">
+                                        <p class="text-xs text-gray-500 mt-1">Este produto será aplicado a todas as linhas.</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <label for="filterProduto" class="block text-sm font-medium text-gray-600">Produto</label>
-                                    <input type="text" id="filterProduto" placeholder="Ex: PALLET" class="form-input">
-                                    <p class="text-xs text-gray-500 mt-1">Este produto será aplicado a todas as linhas.</p>
+                            </div>
+
+                            <!-- Etapa 2: Colar Dados -->
+                            <div class="info-card mb-6">
+                                <h2 class="text-xl font-semibold mb-4 text-gray-700">2. Colar Dados do Sistema</h2>
+                                <p class="text-sm text-gray-600 mb-4">
+                                    Cole os dados copiados do seu sistema interno. (Sem cabeçalho).
+                                </p>
+                                <textarea id="dataInput" rows="10" class="form-input font-mono" placeholder="Cole os dados aqui..."></textarea>
+                                <button id="processButton" class="btn btn-primary w-full mt-4 disabled:opacity-50" disabled>
+                                    <i data-feather="refresh-cw" class="h-4 w-4 mr-2"></i> Processar e Validar Dados
+                                </button>
+                            </div>
+
+                            <!-- Etapa 3: Prévia -->
+                            <div id="previewSection" class="info-card hidden">
+                                <h2 class="text-xl font-semibold mb-4 text-gray-700">3. Prévia dos Dados para Inserção</h2>
+                                <p id="previewSummary" class="text-sm text-gray-600 mb-4"></p>
+                                <div class="overflow-x-auto max-h-96 border border-gray-200 rounded-md">
+                                    <table class="min-w-full divide-y divide-gray-200">
+                                        <thead class="bg-gray-50">
+                                            <tr id="previewHeader"></tr>
+                                        </thead>
+                                        <tbody id="previewBody" class="bg-white divide-y divide-gray-200"></tbody>
+                                    </table>
                                 </div>
+                                <button id="insertButton" class="btn btn-success w-full mt-6 disabled:opacity-50">
+                                    <i data-feather="database" class="h-4 w-4 mr-2"></i> Confirmar e Inserir Linhas no Banco
+                                </button>
+                                <p id="insertStatus" class="text-sm text-center text-gray-500 mt-4"></p>
                             </div>
                         </div>
 
-                        <!-- Etapa 2: Colar Dados -->
-                        <div class="info-card mb-6">
-                            <h2 class="text-xl font-semibold mb-4 text-gray-700">2. Colar Dados do Sistema</h2>
-                            <p class="text-sm text-gray-600 mb-4">
-                                Cole os dados copiados do seu sistema interno. (Sem cabeçalho).
-                            </p>
-                            <textarea id="dataInput" rows="10" class="form-input font-mono" placeholder="Cole os dados aqui..."></textarea>
-                            <button id="processButton" class="btn btn-primary w-full mt-4 disabled:opacity-50" disabled>
-                                <i data-feather="refresh-cw" class="h-4 w-4 mr-2"></i> Processar e Validar Dados
-                            </button>
-                        </div>
-
-                        <!-- Etapa 3: Prévia -->
-                        <div id="previewSection" class="info-card hidden">
-                            <h2 class="text-xl font-semibold mb-4 text-gray-700">3. Prévia dos Dados para Inserção</h2>
-                            <p id="previewSummary" class="text-sm text-gray-600 mb-4"></p>
-                            <div class="overflow-x-auto max-h-96 border border-gray-200 rounded-md">
-                                <table class="min-w-full divide-y divide-gray-200">
-                                    <thead class="bg-gray-50">
-                                        <tr id="previewHeader"></tr>
-                                    </thead>
-                                    <tbody id="previewBody" class="bg-white divide-y divide-gray-200"></tbody>
-                                </table>
+                        <!-- ====================================================== -->
+                        <!-- AJUSTE FEITO AQUI: Bloco da tela de sucesso adicionado -->
+                        <!-- ====================================================== -->
+                        <div id="imobSuccessScreen" class="success-animation-container" style="display: none;">
+                            <div class="success-icon">
+                                <div class="circle"></div>
+                                <div class="checkmark"></div>
                             </div>
-                            <button id="insertButton" class="btn btn-success w-full mt-6 disabled:opacity-50">
-                                <i data-feather="database" class="h-4 w-4 mr-2"></i> Confirmar e Inserir Linhas no Banco
-                            </button>
-                            <p id="insertStatus" class="text-sm text-center text-gray-500 mt-4"></p>
+                            <h2 class="text-2xl font-semibold text-gray-800 mb-2">Inserção Concluída!</h2>
+                            <p class="text-gray-600 mb-8">Os dados foram enviados com sucesso para o banco do B.I.</p>
+                            
+                            <div class="flex flex-col sm:flex-row gap-4">
+                                <button id="imobSuccessAgainBtn" class="btn btn-secondary w-full sm:w-auto">
+                                    <i data-feather="upload" class="h-4 w-4 mr-2"></i> Inserir Novo Lote
+                                </button>
+                                <button id="imobSuccessHomeBtn" class="btn btn-primary w-full sm:w-auto">
+                                    <i data-feather="home" class="h-4 w-4 mr-2"></i> Voltar para Home
+                                </button>
+                            </div>
                         </div>
+                        <!-- ====================================================== -->
+                        <!-- FIM DO AJUSTE -->
+                        <!-- ====================================================== -->
+
 
                     </div>
 
