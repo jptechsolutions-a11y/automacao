@@ -109,20 +109,47 @@ window.GG = {};
 
         // Habilita ícones do Feather (inicial)
         feather.replace();
+
+        // ======================================================
+        // <<< ATUALIZAÇÃO: Lógica das Sub-Abas IMOB >>>
+        // ======================================================
+        const imobSubTab_Update = document.getElementById('imobSubTab_Update');
+        const imobSubTab_Panel = document.getElementById('imobSubTab_Panel');
+        const imobSubPanel_Update = document.getElementById('imobSubPanel_Update');
+        const imobSubPanel_Panel = document.getElementById('imobSubPanel_Panel');
+
+        if (imobSubTab_Update) {
+            imobSubTab_Update.addEventListener('click', () => {
+                imobSubTab_Update.classList.add('active');
+                imobSubTab_Panel.classList.remove('active');
+                imobSubPanel_Update.classList.add('active');
+                imobSubPanel_Panel.classList.remove('active');
+            });
+        }
+        
+        if (imobSubTab_Panel) {
+            imobSubTab_Panel.addEventListener('click', () => {
+                imobSubTab_Panel.classList.add('active');
+                imobSubTab_Update.classList.remove('active');
+                imobSubPanel_Panel.classList.add('active');
+                imobSubPanel_Update.classList.remove('active');
+                
+                // Carrega o painel ao clicar
+                loadImobPanelIntoIframe(); 
+            });
+        }
+        // ======================================================
+        // <<< FIM DA ATUALIZAÇÃO >>>
+        // ======================================================
     }
 
     /**
      * Troca a view (tela) visível no app.
      * @param {string} viewId - O ID da view para mostrar (ex: 'homeView')
      * @param {HTMLElement} clickedItem - O item de menu que foi clicado
+     * @param {string} panelKey - A chave do painel (ex: 'imob', 'vendas')
      */
-    // ======================================================
-    // <<< INÍCIO DA ATUALIZAÇÃO: Adicionado 'panelKey' >>>
-    // ======================================================
     GG.showView = (viewId, clickedItem, panelKey = null) => {
-    // ======================================================
-    // <<< FIM DA ATUALIZAÇÃO >>>
-    // ======================================================
         // Esconde todas as views
         document.querySelectorAll('.view-content').forEach(view => {
             view.classList.remove('active');
@@ -159,10 +186,11 @@ window.GG = {};
                     GG.showLoading(true, 'Carregando painel...');
                     iframe.src = panelData.embedUrl;
                     
-                    // Esconde o loading depois de 2s (o iframe não avisa quando termina)
+                    // Esconde o loading depois de um tempo
                     setTimeout(() => GG.showLoading(false), 2000); 
                 }
             } else if (iframe && title) {
+                // Se não encontrar a chave (ex: link quebrado)
                 title.textContent = "Erro: Painel não encontrado ou não configurado";
                 iframe.src = "";
             }
@@ -189,6 +217,20 @@ window.GG = {};
         // ======================================================
         // <<< FIM DA ATUALIZAÇÃO >>>
         // ======================================================
+        
+        // ======================================================
+        // <<< ATUALIZAÇÃO: Resetar Sub-Abas ao mostrar imobView >>>
+        // ======================================================
+        if (viewId === 'imobView') {
+            // Garante que a aba "Atualizar" seja a padrão
+            const updateTab = document.getElementById('imobSubTab_Update');
+            if (updateTab) {
+                updateTab.click();
+            }
+        }
+        // ======================================================
+        // <<< FIM DA ATUALIZAÇÃO >>>
+        // ======================================================
 
         // Reseta a view do IMOB se sair dela
         if (viewId !== 'imobView') {
@@ -202,19 +244,24 @@ window.GG = {};
     GG.logout = async () => {
         if (!supabase) return;
         GG.showLoading(true, 'Saindo...');
-        await supabase.auth.signOut();
 
-        // ======================================================
-        // <<< INÍCIO DA ATUALIZAÇÃO: Limpar iframe no logout >>>
-        // ======================================================
+        // Limpa o iframe principal do lookerView
         const iframe = document.getElementById('lookerIframe');
         if (iframe) {
-            iframe.src = ""; // Limpa o iframe para não vazar dados
+            iframe.src = ""; // Limpa o iframe
+        }
+        // ======================================================
+        // <<< ATUALIZAÇÃO: Limpar iframe do IMOB no logout >>>
+        // ======================================================
+        const imobIframe = document.getElementById('imobLookerIframe');
+        if (imobIframe) {
+            imobIframe.src = "";
         }
         // ======================================================
         // <<< FIM DA ATUALIZAÇÃO >>>
         // ======================================================
 
+        await supabase.auth.signOut();
         window.location.href = 'index.html'; // Corrigido de login.html para index.html (onde está o login)
     };
 
@@ -305,22 +352,25 @@ window.GG = {};
         const processButton = document.getElementById('processButton');
         const insertButton = document.getElementById('insertButton');
 
-        processButton.addEventListener('click', handleProcessData);
-        insertButton.addEventListener('click', handleInsertData);
+        if(processButton) processButton.addEventListener('click', handleProcessData);
+        if(insertButton) insertButton.addEventListener('click', handleInsertData);
 
         // Botões da tela de sucesso
-        document.getElementById('imobSuccessHomeBtn').addEventListener('click', () => {
+        const successHomeBtn = document.getElementById('imobSuccessHomeBtn');
+        const successAgainBtn = document.getElementById('imobSuccessAgainBtn');
+
+        if(successHomeBtn) successHomeBtn.addEventListener('click', () => {
             GG.showView('homeView', document.querySelector('a[href="#home"]'));
             // resetImobView() é chamado pelo showView
         });
 
-        document.getElementById('imobSuccessAgainBtn').addEventListener('click', () => {
+        if(successAgainBtn) successAgainBtn.addEventListener('click', () => {
             // Apenas reseta a view do IMOB
             resetImobView();
         });
 
         // ======================================================
-        // <<< INÍCIO DA ATUALIZAÇÃO: LÓGICA DAS ABAS E UPLOAD >>>
+        // <<< INÍCIO DA ADIÇÃO: LÓGICA DAS ABAS E UPLOAD >>>
         // ======================================================
         const pasteTab = document.getElementById('imobPasteTab');
         const uploadTab = document.getElementById('imobUploadTab');
@@ -331,14 +381,14 @@ window.GG = {};
         const dataInput = document.getElementById('dataInput');
 
         // Controla a troca de abas
-        pasteTab.addEventListener('click', () => {
+        if(pasteTab) pasteTab.addEventListener('click', () => {
             pasteTab.classList.add('active');
             uploadTab.classList.remove('active');
             pastePanel.style.display = 'block';
             uploadPanel.style.display = 'none';
         });
 
-        uploadTab.addEventListener('click', () => {
+        if(uploadTab) uploadTab.addEventListener('click', () => {
             uploadTab.classList.add('active');
             pasteTab.classList.remove('active');
             uploadPanel.style.display = 'block';
@@ -346,7 +396,7 @@ window.GG = {};
         });
 
         // Controla a leitura do arquivo
-        fileInput.addEventListener('change', (event) => {
+        if(fileInput) fileInput.addEventListener('change', (event) => {
             const file = event.target.files[0];
             if (!file) {
                 fileStatus.textContent = 'Nenhum arquivo selecionado.';
@@ -378,7 +428,7 @@ window.GG = {};
             reader.readAsText(file);
         });
         // ======================================================
-        // <<< FIM DA ATUALIZAÇÃO >>>
+        // <<< FIM DA ADIÇÃO >>>
         // ======================================================
     }
 
@@ -386,20 +436,28 @@ window.GG = {};
      * Reseta a view do uploader para o estado inicial.
      */
     function resetImobView() {
-        document.getElementById('imobUploaderForm').style.display = 'block';
-        document.getElementById('imobSuccessScreen').style.display = 'none';
-        document.getElementById('dataInput').value = '';
+        const uploaderForm = document.getElementById('imobUploaderForm');
+        const successScreen = document.getElementById('imobSuccessScreen');
+        const dataInput = document.getElementById('dataInput');
+        const filterEmpresa = document.getElementById('filterEmpresa');
+        const filterProduto = document.getElementById('filterProduto');
+        const previewSection = document.getElementById('previewSection');
+        const insertStatus = document.getElementById('insertStatus');
+
+        if(uploaderForm) uploaderForm.style.display = 'block';
+        if(successScreen) successScreen.style.display = 'none';
+        if(dataInput) dataInput.value = '';
         
         // <<< ADICIONADO: Reseta os dropdowns >>>
-        document.getElementById('filterEmpresa').value = '';
-        document.getElementById('filterProduto').value = '';
+        if(filterEmpresa) filterEmpresa.value = '';
+        if(filterProduto) filterProduto.value = '';
         
-        document.getElementById('previewSection').classList.add('hidden');
-        document.getElementById('insertStatus').textContent = '';
+        if(previewSection) previewSection.classList.add('hidden');
+        if(insertStatus) insertStatus.textContent = '';
         globalRowsToInsert = [];
 
         // ======================================================
-        // <<< INÍCIO DA ATUALIZAÇÃO: RESETAR ABAS E UPLOAD >>>
+        // <<< INÍCIO DA ADIÇÃO: RESETAR ABAS E UPLOAD >>>
         // ======================================================
         // Reseta o input de arquivo
         const fileInput = document.getElementById('imobFileInput');
@@ -411,13 +469,21 @@ window.GG = {};
         }
         
         // Garante que a aba "Colar" seja a padrão
-        if (document.getElementById('imobPasteTab')) {
-            document.getElementById('imobPasteTab').click();
-            
-            // Garante que os painéis estejam corretos (caso o click() falhe antes do DOM estar pronto)
-            if(document.getElementById('pastePanel')) document.getElementById('pastePanel').style.display = 'block';
-            if(document.getElementById('uploadPanel')) document.getElementById('uploadPanel').style.display = 'none';
-            if(document.getElementById('imobUploadTab')) document.getElementById('imobUploadTab').classList.remove('active');
+        const pasteTab = document.getElementById('imobPasteTab');
+        if (pasteTab) {
+            pasteTab.click();
+        }
+        // ======================================================
+        // <<< FIM DA ADIÇÃO >>>
+        // ======================================================
+
+        // ======================================================
+        // <<< ATUALIZAÇÃO (Turn 29): Resetar sub-aba >>>
+        // ======================================================
+        // Garante que a sub-aba "Atualizar" seja a padrão
+        const updateTab = document.getElementById('imobSubTab_Update');
+        if (updateTab) {
+            updateTab.click();
         }
         // ======================================================
         // <<< FIM DA ATUALIZAÇÃO >>>
@@ -458,8 +524,7 @@ window.GG = {};
             }
 
             // ======================================================
-            // <<< MUDANÇA: Verificação de duplicados em lotes (Chunking) >>>
-            // ATUALIZAÇÃO: As consultas agora são feitas em paralelo, não em série.
+            // <<< MUDANÇA: Verificação de duplicados em paralelo (Promise.all) >>>
             // ======================================================
             GG.showLoading(true, 'Verificando duplicados no banco...');
             const existingSeqSet = new Set();
@@ -623,6 +688,35 @@ window.GG = {};
     // ======================================================
     // <<< INÍCIO DA ATUALIZAÇÃO: Novas Funções de Configuração >>>
     // ======================================================
+
+    /**
+     * Carrega o painel IMOB no seu iframe específico.
+     */
+    function loadImobPanelIntoIframe() {
+        const iframe = document.getElementById('imobLookerIframe');
+        if (!iframe) return; // Sai se o iframe não existir
+
+        // Verifica se o painel já está carregado
+        if (iframe.src && iframe.src !== "" && iframe.src !== "about:blank") {
+            return; // Já carregado, não faz nada
+        }
+
+        if (globalPanelConfig.has('imob')) {
+            const panelData = globalPanelConfig.get('imob');
+            if (panelData.embedUrl) {
+                GG.showLoading(true, 'Carregando painel...');
+                iframe.src = panelData.embedUrl;
+                // Esconde o loading depois de 2s
+                setTimeout(() => GG.showLoading(false), 2000);
+            } else {
+                // Se o link estiver em branco nas configs
+                iframe.src = "about:blank";
+                console.warn("Link do painel IMOB não configurado em Configurações.");
+            }
+        } else {
+            console.warn("Chave 'imob' não encontrada nas configurações.");
+        }
+    }
 
     /**
      * Carrega os links dos painéis do Supabase para a memória (globalPanelConfig).
@@ -797,6 +891,9 @@ window.GG = {};
         const empresaSelect = document.getElementById('filterEmpresa');
         const produtoSelect = document.getElementById('filterProduto');
 
+        // Se os selects não existirem nesta view, não faz nada
+        if (!empresaSelect || !produtoSelect) return;
+
         try {
             // Buscar Empresas
             const { data: empresas, error: empresaError } = await supabase
@@ -892,10 +989,10 @@ window.GG = {};
         }
 
         // ======================================================
-        // <<< INÍCIO DA ATUALIZAÇÃO: Adiciona nota sobre limite >>>
+        // <<< INÍCIO DA ATUALIZAÇÃO: Avisar sobre limite >>>
         // ======================================================
         if (rows.length > PREVIEW_LIMIT) {
-            summary.textContent += ` (Mostrando as primeiras ${PREVIEW_LIMIT} na prévia abaixo).`;
+            summary.textContent += ` (Mostrando as primeiras ${PREVIEW_LIMIT} na prévia).`;
         }
         // ======================================================
         // <<< FIM DA ATUALIZAÇÃO >>>
@@ -908,9 +1005,14 @@ window.GG = {};
         });
 
         // ======================================================
-        // <<< INÍCIO DA ATUALIZAÇÃO: Aplica o .slice() para limitar >>>
+        // <<< INÍCIO DA ATUALIZAÇÃO: Aplicar Limite >>>
         // ======================================================
-        rows.slice(0, PREVIEW_LIMIT).forEach(row => {
+        const rowsToRender = rows.slice(0, PREVIEW_LIMIT);
+        // ======================================================
+        // <<< FIM DA ATUALIZAÇÃO >>>
+        // ======================================================
+
+        rowsToRender.forEach(row => { // <<< ATUALIZADO: usa rowsToRender
             let rowHtml = '<tr>';
             columns.forEach(col => {
                 // Colunas modificadas/adicionadas
@@ -920,9 +1022,6 @@ window.GG = {};
             rowHtml += '</tr>';
             body.innerHTML += rowHtml;
         });
-        // ======================================================
-        // <<< FIM DA ATUALIZAÇÃO >>>
-        // ======================================================
     }
 
 
