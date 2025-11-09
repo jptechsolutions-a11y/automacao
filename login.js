@@ -96,12 +96,20 @@
                 throw new Error("Falha ao inicializar o cliente Supabase.");
             }
             
+            // ======================================================
+            // AJUSTE FEITO AQUI: Bloco de auto-login removido/comentado
+            // ======================================================
             // Verifica se já está logado
+            /*
             const { data: { session } } = await supabase.auth.getSession();
             if (session) {
                 console.log('Sessão ativa encontrada, redirecionando...');
                 window.location.href = 'app.html'; // Redireciona para o app
             }
+            */
+            // ======================================================
+            // FIM DO AJUSTE
+            // ======================================================
 
         } catch (error) {
             console.error('Erro de conexão:', error);
