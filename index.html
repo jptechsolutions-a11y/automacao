@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- ATUALIZADO: Título -->
+    <title>Acesso | Automação de Painéis B.I.</title>
+    <link rel="icon" href="fav.png" type="image/png">
+    <!-- Carrega o style.css (seu modelo) -->
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="login-body">
+
+    <div class="auth-container">
+        <!-- Overlay de Fundo com Blur -->
+        <div class="auth-blur-overlay"></div>
+        
+        <div class="auth-grid-container">
+            
+            <!-- COLUNA DA ESQUERDA (FORMULÁRIOS) -->
+            <div>
+                <!-- Card de Login -->
+                <div class="auth-card" id="loginCard">
+                    <div class="auth-header" style="text-align: center;">
+                        <!-- ATUALIZADO: Logo e Títulos -->
+                        <img src="https://placehold.co/160x60/FFFFFF/011627?text=Pain%C3%A9is+B.I." alt="Logo Painéis B.I." class="block w-40 h-auto mb-6 mx-auto object-contain">
+                        <h2 id="formTitle">Acesso ao Sistema</h2>
+                        <p id="formSubtitle">Automação de Atualização de Painéis</p>
+                    </div>
+
+                    <div id="loginAlert"></div>
+
+                    <!-- Formulário de Login -->
+                    <form id="loginForm" class="auth-form">
+                        <div class="form-group" style="margin-bottom: 20px;">
+                            <input type="email" id="loginEmail" placeholder="E-mail" required class="w-full">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 20px;">
+                            <input type="password" id="loginPassword" placeholder="Senha" required class="w-full">
+                        </div>
+                        
+                        <button id="loginSubmitBtn" type="submit" class="btn-gradient">
+                            ENTRAR
+                        </button>
+                    </form>
+                    
+                    <div class="mt-6 text-center text-sm">
+                        <a href="#forgot" id="forgotLink" class="text-blue-600 hover:underline">Esqueceu sua senha?</a>
+                        <span class="mx-2 text-gray-400">|</span>
+                        <a href="#request" id="requestLink" class="text-blue-600 hover:underline">Solicitar Acesso</a>
+                    </div>
+                </div>
+
+                <!-- Card de Solicitação de Acesso -->
+                <div class="auth-card" id="requestAccessCard" style="display: none;">
+                    <div class="auth-header" style="text-align: center;">
+                        <img src="https://placehold.co/160x60/FFFFFF/011627?text=Pain%C3%A9is+B.I." alt="Logo Painéis B.I." class="block w-40 h-auto mb-6 mx-auto object-contain">
+                        <h2 id="formTitleRequest">Solicitar Acesso</h2>
+                        <p id="formSubtitleRequest">Preencha seus dados para solicitar sua conta.</p>
+                    </div>
+                    
+                    <div id="requestAlert"></div>
+
+                    <form id="requestAccessForm" class="auth-form">
+                        <div class="form-group" style="margin-bottom: 20px;">
+                            <input type="text" id="requestNome" placeholder="Seu Nome Completo" required class="w-full">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 20px;">
+                            <input type="email" id="requestEmail" placeholder="seu.email@empresa.com" required class="w-full">
+                        </div>
+                         <div class="form-group" style="margin-bottom: 20px;">
+                            <input type="password" id="requestPassword" placeholder="Crie uma senha" required class="w-full">
+                        </div>
+                        
+                        <button id="requestSubmitBtn" type="submit" class="btn-gradient">
+                            Enviar Solicitação
+                        </button>
+                    </form>
+                    
+                    <div class="mt-6 text-center text-sm">
+                        <span>Já tem uma conta?</span>
+                        <a href="#login" id="loginLinkRequest" class="font-semibold" style="color: var(--accent);">Entrar</a>
+                    </div>
+                </div>
+
+                <!-- Card de Recuperar Senha -->
+                <div class="auth-card" id="forgotCard" style="display: none;">
+                    <div class="auth-header" style="text-align: center;">
+                        <img src="https://placehold.co/160x60/FFFFFF/011627?text=Pain%C3%A9is+B.I." alt="Logo Painéis B.I." class="block w-40 h-auto mb-6 mx-auto object-contain">
+                        <h2>Recuperar Senha</h2>
+                        <p>Digite seu e-mail para redefinir a senha.</p>
+                    </div>
+                    
+                    <div id="forgotAlert"></div>
+
+                    <form id="forgotForm" class="auth-form">
+                        <div class="form-group" style="margin-bottom: 20px;">
+                            <input type="email" id="forgotEmail" placeholder="E-mail" required class="w-full">
+                        </div>
+                        <button id="forgotSubmitBtn" type="submit" class="btn-gradient">
+                            Enviar Link de Redefinição
+                        </button>
+                    </form>
+                    
+                    <div class="mt-6 text-center text-sm">
+                        <a href="#login" id="loginLinkForgot" class="font-semibold" style="color: var(--accent);">Voltar para Login</a>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- COLUNA DA DIREITA (INFORMAÇÕES) -->
+            <div class="auth-info-grid">
+                <div class="info-card info-card-gradient">
+                    <h3 class="text-2xl font-bold mb-3">AUTOMAÇÃO DE DADOS, DECISÕES RÁPIDAS.</h3>
+                    <p>Centralize a atualização dos seus painéis de B.I. com precisão, agilidade e total rastreabilidade.</p>
+                </div>
+
+                <div class="info-card info-card-white">
+                    <h4>FLUXO SIMPLIFICADO</h4>
+                    <h5>ETAPAS DA ATUALIZAÇÃO IMOB</h5>
+                    
+                    <ul class="list-none space-y-2">
+                        <li><span style="color: var(--secondary);">&#10004;</span> <span class="font-semibold">Copiar:</span> Copie os dados do seu sistema interno.</li>
+                        <li><span style="color: var(--secondary);">&#10004;</span> <span class="font-semibold">Colar:</span> Cole os dados na plataforma.</li>
+                        <li><span style="color: var(--secondary);">&#10004;</span> <span class="font-semibold">Validar:</span> O sistema filtra duplicados e aplica fórmulas (PROCV).</li>
+                        <li><span style="color: var(--secondary);">&#10004;</span> <span class="font-semibold">Inserir:</span> Os dados são inseridos no B.I. com sucesso.</li>
+                    </ul>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <footer class="auth-footer">
+        © 2025 - Painel de Automação B.I. | Desenvolvido por <span style="font-weight: 700;">@ Juliano Patrick </span>
+    </footer>
+    
+    <!-- Tela de Loading -->
+    <div class="loading" id="loading" style="display: none;"><div class="spinner"></div><p>Processando...</p></div>
+
+    <script src="login.js"></script>
+    <script>
+        feather.replace();
+    </jsCript>
+</body>
+</html>
