@@ -99,9 +99,15 @@
                         <i data-feather="dollar-sign" class="h-5 w-5 mr-3"></i> <span class="nav-text">Painel Vendas (Looker)</span>
                     </a>
                     <!-- ====================================================== -->
-                    <a href="#" class="nav-item disabled" title="Em breve">
-                        <i data-feather="clock" class="h-5 w-5 mr-3"></i> <span class="nav-text">Em Criação...</span>
+                    
+                    <!-- ====================================================== -->
+                    <!-- <<< ATUALIZAÇÃO: Habilitando o link de Configurações >>> -->
+                    <!-- ====================================================== -->
+                    <a href="#settings" class="nav-item" title="Configurações" onclick="window.GG.showView('settingsView', this)">
+                        <i data-feather="settings" class="h-5 w-5 mr-3"></i> <span class="nav-text">Configurações</span>
                     </a>
+                    <!-- ====================================================== -->
+                    
                 </nav>
             </aside>
             
@@ -148,14 +154,18 @@
                             </div>
 
                             <!-- Card 3: Outro Painel (Placeholder) -->
-                            <div class="panel-card disabled">
-                                <div class="panel-icon bg-gray-100 text-gray-400">
+                            <!-- ====================================================== -->
+                            <!-- <<< ATUALIZAÇÃO: Card de Configurações agora é funcional >>> -->
+                            <!-- ====================================================== -->
+                            <div class="panel-card" onclick="window.GG.showView('settingsView', document.querySelector('a[href=\'#settings\']'))">
+                                <div class="panel-icon bg-gray-100 text-gray-600">
+                            <!-- ====================================================== -->
                                     <i data-feather="settings"></i>
                                 </div>
                                 <h3 class="panel-title">Configurações</h3>
-                                <p class="panel-description">Gerenciar parâmetros de outros painéis. (Em breve)</p>
-                                <span class="panel-status status-inactive">
-                                    <i data-feather="clock" class="h-4 w-4"></i> Em Criação
+                                <p class="panel-description">Gerenciar links de incorporação dos painéis do Looker Studio.</p>
+                                <span class="panel-status status-active">
+                                    <i data-feather="check-circle" class="h-4 w-4"></i> Ativo
                                 </span>
                             </div>
                         </div>
@@ -316,6 +326,40 @@
                                 frameborder="0"
                                 allowfullscreen>
                             </iframe>
+                        </div>
+                    </div>
+
+                    <!-- ====================================================== -->
+                    <!-- <<< ATUALIZAÇÃO: Nova View de Configurações >>> -->
+                    <!-- ====================================================== -->
+                    <!-- 
+                        View 4: Configurações (NOVA) 
+                        Tela para gerenciar os links do Looker
+                    -->
+                    <div id="settingsView" class="view-content" style="display: none;">
+                        <h1 class="text-2xl font-semibold text-gray-800 mb-6">Configurações dos Painéis</h1>
+                        
+                        <div id="settingsAlertContainer"></div>
+
+                        <div class="info-card mb-6">
+                            <h2 class="text-xl font-semibold mb-4 text-gray-700">Links de Incorporação (Looker Studio)</h2>
+                            <p class="text-sm text-gray-600 mb-6">
+                                Cole aqui a URL de incorporação (embed URL) de cada painel. Lembre-se de configurar o painel no Looker Studio como "Qualquer pessoa com o link pode ver".
+                            </p>
+
+                            <div class="form-group mb-6">
+                                <label for="settingLinkImob" class="block text-sm font-medium text-gray-700 mb-2">Link do Painel IMOB</label>
+                                <input type="url" id="settingLinkImob" class="form-input" placeholder="https://lookerstudio.google.com/embed/reporting/...">
+                            </div>
+
+                            <div class="form-group mb-6">
+                                <label for="settingLinkVendas" class="block text-sm font-medium text-gray-700 mb-2">Link do Painel Vendas</label>
+                                <input type="url" id="settingLinkVendas" class="form-input" placeholder="https://lookerstudio.google.com/embed/reporting/...">
+                            </div>
+
+                            <button id="saveSettingsBtn" class="btn btn-primary w-full sm:w-auto">
+                                <i data-feather="save" class="h-4 w-4 mr-2"></i> Salvar Configurações
+                            </button>
                         </div>
                     </div>
                     <!-- ====================================================== -->
