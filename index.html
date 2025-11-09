@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- ATUALIZADO: Título da Página -->
+    <title>Atualização de Painéis - B.I.</title>
+    <!-- Favicon e Meta (do seu modelo) -->
+    <link rel="icon" href="fav.png" type="image/png"> 
+    <meta name="theme-color" content="#011627">
+    
+    <!-- CSS (Novo arquivo) -->
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Tailwind (Apenas para utilitários, já que style.css é o principal) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Libs (do seu modelo) -->
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gray-100">
+
+    <div id="appShell" class="h-screen flex flex-col">
+
+        <!-- Barra do Topo (Baseada no seu modelo) -->
+        <header id="topBar" class="flex-shrink-0">
+            <div class="flex items-center gap-4">
+                <button id="sidebarToggle" class="btn-icon">
+                    <i data-feather="menu" class="h-5 w-5"></i>
+                </button>
+                <!-- ATUALIZADO: Logo Placeholder -->
+                <img src="https://placehold.co/100x40/011627/FFF?text=Pain%C3%A9is" class="h-8 w-auto" alt="Logo Painéis"> <!-- Placeholder para seu icon.png -->
+                <div class="separator"></div>
+                <div class="flex flex-col">
+                    <span class="text-sm font-semibold text-white">Painel de B.I.</span>
+                    <!-- ATUALIZADO: Subtítulo -->
+                    <span class="text-xs text-gray-400">Automação de B.I.</span>
+                </div>
+            </div>
+            
+            <div class="flex-1 flex justify-center px-8">
+                <!-- Espaço central -->
+            </div>
+            
+            <div class="flex items-center gap-4">
+                <!-- <div class="separator"></div> -->
+                <!-- Ocultado o dropdown de perfil, pois não há login ainda -->
+                <!-- Você pode re-adicionar depois -->
+            </div>
+        </header>
+
+        <div id="mainSystem" class="flex flex-1 overflow-hidden">
+
+            <!-- Sidebar (Menu de Navegação) -->
+            <aside class="sidebar collapsed">
+                <nav class="p-2 pt-4">
+                    <a href="#home" class="nav-item" title="Home" onclick="window.GG.showView('homeView', this)">
+                        <i data-feather="home" class="h-5 w-5 mr-3"></i> <span class="nav-text">Home</span>
+                    </a>
+                    <a href="#imob" class="nav-item" title="Upload Painel IMOB" onclick="window.GG.showView('imobView', this)">
+                        <i data-feather="upload-cloud" class="h-5 w-5 mr-3"></i> <span class="nav-text">Upload IMOB</span>
+                    </a>
+                    
+                    <div class="mt-4 border-t border-gray-700 pt-2">
+                        <span class="p-3 text-xs font-semibold text-gray-500 uppercase nav-text">Outros Painéis</span>
+                    </div>
+                    
+                    <a href="#" class="nav-item disabled" title="Em breve">
+                        <i data-feather="bar-chart-2" class="h-5 w-5 mr-3"></i> <span class="nav-text">Painel Vendas</span>
+                    </a>
+                    <a href="#" class="nav-item disabled" title="Em breve">
+                        <i data-feather="clock" class="h-5 w-5 mr-3"></i> <span class="nav-text">Em Criação...</span>
+                    </a>
+                </nav>
+            </aside>
+            
+            <div id="sidebarOverlay"></div>
+
+            <!-- Conteúdo Principal (onde as "views" são trocadas) -->
+            <main class="main-content">
+                <div class="container mx-auto px-6 py-8">
+
+                    <!-- 
+                        View 1: Home (Nova) 
+                        Tela de seleção de painéis
+                    -->
+                    <div id="homeView" class="view-content active">
+                        <h1 class="text-2xl font-semibold text-gray-800 mb-6">Painéis de Atualização</h1>
+                        
+                        <div id="statusConexao" class="status-conexao mb-6">
+                            <span id="textoStatus"><i data-feather="refresh-cw" class="animate-spin h-4 w-4 mr-2"></i> Verificando conexão com a API...</span>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <!-- Card 1: Uploader IMOB (Ativo) -->
+                            <div class="panel-card" onclick="window.GG.showView('imobView', document.querySelector('a[href=\'#imob\']'))">
+                                <div class="panel-icon bg-blue-100 text-blue-600">
+                                    <i data-feather="upload-cloud"></i>
+                                </div>
+                                <h3 class="panel-title">Upload Painel IMOB</h3>
+                                <p class="panel-description">Atualizar a base de dados de movimentação (IMOB) colando dados do sistema.</p>
+                                <span class="panel-status status-active">
+                                    <i data-feather="check-circle" class="h-4 w-4"></i> Ativo
+                                </span>
+                            </div>
+
+                            <!-- Card 2: Painel Vendas (Placeholder) -->
+                            <div class="panel-card disabled">
+                                <div class="panel-icon bg-gray-100 text-gray-400">
+                                    <i data-feather="bar-chart-2"></i>
+                                </div>
+                                <h3 class="panel-title">Painel Vendas</h3>
+                                <p class="panel-description">Atualizar relatórios de vendas consolidadas. (Em breve)</p>
+                                <span class="panel-status status-inactive">
+                                    <i data-feather="clock" class="h-4 w-4"></i> Em Criação
+                                </span>
+                            </div>
+
+                            <!-- Card 3: Outro Painel (Placeholder) -->
+                            <div class="panel-card disabled">
+                                <div class="panel-icon bg-gray-100 text-gray-400">
+                                    <i data-feather="settings"></i>
+                                </div>
+                                <h3 class="panel-title">Configurações</h3>
+                                <p class="panel-description">Gerenciar parâmetros de outros painéis. (Em breve)</p>
+                                <span class="panel-status status-inactive">
+                                    <i data-feather="clock" class="h-4 w-4"></i> Em Criação
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 
+                        View 2: Uploader IMOB (Refatorado)
+                        Nosso uploader antigo, agora dentro da view.
+                    -->
+                    <div id="imobView" class="view-content">
+                        <h1 class="text-2xl font-semibold text-gray-800 mb-6">Upload em Lote - Painel IMOB</h1>
+                        
+                        <!-- Etapa 1: Filtros (Não precisa mais de conexão) -->
+                        <div class="info-card mb-6">
+                            <h2 class="text-xl font-semibold mb-4 text-gray-700">1. Filtros de Inserção</h2>
+                            <p class="text-sm text-gray-600 mb-4">
+                                Preencha os valores que serão aplicados a todas as linhas novas.
+                            </p>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label for="filterEmpresa" class="block text-sm font-medium text-gray-600">Empresa (Filial)</label>
+                                    <input type="text" id="filterEmpresa" placeholder="Ex: 101" class="form-input">
+                                    <p class="text-xs text-gray-500 mt-1">Digite o ID da Empresa/Filial.</p>
+                                </div>
+                                <div>
+                                    <label for="filterProduto" class="block text-sm font-medium text-gray-600">Produto</label>
+                                    <input type="text" id="filterProduto" placeholder="Ex: PALLET" class="form-input">
+                                    <p class="text-xs text-gray-500 mt-1">Este produto será aplicado a todas as linhas.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Etapa 2: Colar Dados -->
+                        <div class="info-card mb-6">
+                            <h2 class="text-xl font-semibold mb-4 text-gray-700">2. Colar Dados do Sistema</h2>
+                            <p class="text-sm text-gray-600 mb-4">
+                                Cole os dados copiados do seu sistema interno. (Sem cabeçalho).
+                            </p>
+                            <textarea id="dataInput" rows="10" class="form-input font-mono" placeholder="Cole os dados aqui..."></textarea>
+                            <button id="processButton" class="btn btn-primary w-full mt-4 disabled:opacity-50" disabled>
+                                <i data-feather="refresh-cw" class="h-4 w-4 mr-2"></i> Processar e Validar Dados
+                            </button>
+                        </div>
+
+                        <!-- Etapa 3: Prévia -->
+                        <div id="previewSection" class="info-card hidden">
+                            <h2 class="text-xl font-semibold mb-4 text-gray-700">3. Prévia dos Dados para Inserção</h2>
+                            <p id="previewSummary" class="text-sm text-gray-600 mb-4"></p>
+                            <div class="overflow-x-auto max-h-96 border border-gray-200 rounded-md">
+                                <table class="min-w-full divide-y divide-gray-200">
+                                    <thead class="bg-gray-50">
+                                        <tr id="previewHeader"></tr>
+                                    </thead>
+                                    <tbody id="previewBody" class="bg-white divide-y divide-gray-200"></tbody>
+                                </table>
+                            </div>
+                            <button id="insertButton" class="btn btn-success w-full mt-6 disabled:opacity-50">
+                                <i data-feather="database" class="h-4 w-4 mr-2"></i> Confirmar e Inserir Linhas no Banco
+                            </button>
+                            <p id="insertStatus" class="text-sm text-center text-gray-500 mt-4"></p>
+                        </div>
+
+                    </div>
+
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <!-- Tela de Loading (do seu modelo) -->
+    <div class="loading" id="loading" style="display: none;"><div class="spinner"></div><p>Processando...</p></div>
+
+    <!-- Container de Notificações (do seu modelo) -->
+    <div id="notificationContainer"></div>
+
+    <!-- JS (Novo arquivo) -->
+    <script src="app.js"></script>
+    <script>
+        // Inicializa os ícones do Feather
+        feather.replace();
+    </script>
+</body>
+</html>
