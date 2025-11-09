@@ -231,6 +231,68 @@ window.GG = {};
             // Apenas reseta a view do IMOB
             resetImobView();
         });
+
+        // ======================================================
+        // <<< INÍCIO DA ATUALIZAÇÃO: LÓGICA DAS ABAS E UPLOAD >>>
+        // ======================================================
+        const pasteTab = document.getElementById('imobPasteTab');
+        const uploadTab = document.getElementById('imobUploadTab');
+        const pastePanel = document.getElementById('pastePanel');
+        const uploadPanel = document.getElementById('uploadPanel');
+        const fileInput = document.getElementById('imobFileInput');
+        const fileStatus = document.getElementById('fileStatus');
+        const dataInput = document.getElementById('dataInput');
+
+        // Controla a troca de abas
+        pasteTab.addEventListener('click', () => {
+            pasteTab.classList.add('active');
+            uploadTab.classList.remove('active');
+            pastePanel.style.display = 'block';
+            uploadPanel.style.display = 'none';
+        });
+
+        uploadTab.addEventListener('click', () => {
+            uploadTab.classList.add('active');
+            pasteTab.classList.remove('active');
+            uploadPanel.style.display = 'block';
+            pastePanel.style.display = 'none';
+        });
+
+        // Controla a leitura do arquivo
+        fileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (!file) {
+                fileStatus.textContent = 'Nenhum arquivo selecionado.';
+                return;
+            }
+
+            GG.showLoading(true, 'Lendo arquivo...');
+            fileStatus.textContent = `Lendo arquivo: ${file.name} ...`;
+
+            const reader = new FileReader();
+
+            reader.onload = (e) => {
+                // Coloca o conteúdo do arquivo na <textarea>
+                dataInput.value = e.target.result; 
+                
+                GG.showLoading(false);
+                fileStatus.textContent = `Arquivo "${file.name}" carregado. ${e.target.result.length} caracteres. Clique em "Processar" para validar.`;
+                
+                // Opcional: Mudar para a aba de "Colar" para mostrar o texto
+                pasteTab.click(); 
+            };
+
+            reader.onerror = (e) => {
+                GG.showLoading(false);
+                fileStatus.textContent = 'Erro ao ler o arquivo.';
+                console.error('Erro de FileReader:', e);
+            };
+
+            reader.readAsText(file);
+        });
+        // ======================================================
+        // <<< FIM DA ATUALIZAÇÃO >>>
+        // ======================================================
     }
 
     /**
@@ -248,6 +310,31 @@ window.GG = {};
         document.getElementById('previewSection').classList.add('hidden');
         document.getElementById('insertStatus').textContent = '';
         globalRowsToInsert = [];
+
+        // ======================================================
+        // <<< INÍCIO DA ATUALIZAÇÃO: RESETAR ABAS E UPLOAD >>>
+        // ======================================================
+        // Reseta o input de arquivo
+        const fileInput = document.getElementById('imobFileInput');
+        if (fileInput) {
+            fileInput.value = ''; // Limpa o arquivo selecionado
+        }
+        if (document.getElementById('fileStatus')) {
+            document.getElementById('fileStatus').textContent = '';
+        }
+        
+        // Garante que a aba "Colar" seja a padrão
+        if (document.getElementById('imobPasteTab')) {
+            document.getElementById('imobPasteTab').click();
+            
+            // Garante que os painéis estejam corretos (caso o click() falhe antes do DOM estar pronto)
+            if(document.getElementById('pastePanel')) document.getElementById('pastePanel').style.display = 'block';
+            if(document.getElementById('uploadPanel')) document.getElementById('uploadPanel').style.display = 'none';
+            if(document.getElementById('imobUploadTab')) document.getElementById('imobUploadTab').classList.remove('active');
+        }
+        // ======================================================
+        // <<< FIM DA ATUALIZAÇÃO >>>
+        // ======================================================
     }
 
     /**
@@ -255,12 +342,13 @@ window.GG = {};
      */
     async function handleProcessData() {
         const previewSummary = document.getElementById('previewSummary');
-        const rawData = document.getElementById('dataInput').value;
+        // Pega os dados da <textarea> (que agora recebe do 'colar' ou 'importar')
+        const rawData = document.getElementById('dataInput').value; 
         const selectedEmpresa = document.getElementById('filterEmpresa').value;
         const selectedProduto = document.getElementById('filterProduto').value;
 
         if (!rawData) {
-            previewSummary.textContent = 'Nenhum dado colado.';
+            previewSummary.textContent = 'Nenhum dado inserido (colado ou importado).';
             return;
         }
         if (!selectedEmpresa || !selectedProduto) {
