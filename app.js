@@ -17,6 +17,26 @@ window.GG = {};
     let supabase = null;
     let globalRowsToInsert = [];
 
+    // ======================================================
+    // <<< INÍCIO DA ATUALIZAÇÃO: Bloco de Configuração de Painéis >>>
+    // ======================================================
+    // Centralize todos os seus links do Looker Studio aqui.
+    const LOOKER_PANELS = {
+        'imob': {
+            'embedUrl': 'https://YOUR-LOOKER-EMBED-URL-HERE', // <-- TROQUE AQUI
+            'displayName': 'Visualização do Painel IMOB'
+        },
+        'vendas': {
+            'embedUrl': 'https://SEU-LINK-DO-PAINEL-VENDAS-AQUI', // <-- Exemplo para o futuro
+            'displayName': 'Visualização do Painel Vendas'
+        }
+        // Adicione mais painéis aqui no futuro (ex: 'financeiro': { ... })
+    };
+    // ======================================================
+    // <<< FIM DA ATUALIZAÇÃO >>>
+    // ======================================================
+
+
     // --- MAPAS DE COLUNAS (Específico do IMOB) ---
     const COLUMN_MAP = [
         'SEQMOVIMENTAÇÃO', 'DATA', 'TIPO', 'DOC', 'QUANTIDADE', 'LOCAL', 'SALDO', 'OPERAÇÃO', 
@@ -105,7 +125,13 @@ window.GG = {};
      * @param {string} viewId - O ID da view para mostrar (ex: 'homeView')
      * @param {HTMLElement} clickedItem - O item de menu que foi clicado
      */
-    GG.showView = (viewId, clickedItem) => {
+    // ======================================================
+    // <<< INÍCIO DA ATUALIZAÇÃO: Adicionado 'panelKey' >>>
+    // ======================================================
+    GG.showView = (viewId, clickedItem, panelKey = null) => {
+    // ======================================================
+    // <<< FIM DA ATUALIZAÇÃO >>>
+    // ======================================================
         // Esconde todas as views
         document.querySelectorAll('.view-content').forEach(view => {
             view.classList.remove('active');
@@ -124,6 +150,36 @@ window.GG = {};
             clickedItem.classList.add('active');
         }
 
+        // ======================================================
+        // <<< INÍCIO DA ATUALIZAÇÃO: Lógica para carregar Iframe >>>
+        // ======================================================
+        // Lógica específica para carregar o painel do Looker correto
+        if (viewId === 'lookerView') {
+            const iframe = document.getElementById('lookerIframe');
+            const title = document.getElementById('lookerTitle');
+            
+            if (panelKey && LOOKER_PANELS[panelKey] && iframe && title) {
+                const panelData = LOOKER_PANELS[panelKey];
+                title.textContent = panelData.displayName; // Atualiza o título da página
+                
+                // Só carrega se for diferente, para não recarregar à toa
+                if (iframe.src !== panelData.embedUrl) {
+                    GG.showLoading(true, 'Carregando painel...');
+                    iframe.src = panelData.embedUrl;
+                    
+                    // Esconde o loading depois de 2s (o iframe não avisa quando termina)
+                    setTimeout(() => GG.showLoading(false), 2000); 
+                }
+            } else if (iframe && title) {
+                // Se não encontrar a chave (ex: link quebrado)
+                title.textContent = "Erro: Painel não encontrado";
+                iframe.src = "";
+            }
+        }
+        // ======================================================
+        // <<< FIM DA ATUALIZAÇÃO >>>
+        // ======================================================
+
         // Reseta a view do IMOB se sair dela
         if (viewId !== 'imobView') {
             resetImobView();
@@ -137,6 +193,18 @@ window.GG = {};
         if (!supabase) return;
         GG.showLoading(true, 'Saindo...');
         await supabase.auth.signOut();
+
+        // ======================================================
+        // <<< INÍCIO DA ATUALIZAÇÃO: Limpar iframe no logout >>>
+        // ======================================================
+        const iframe = document.getElementById('lookerIframe');
+        if (iframe) {
+            iframe.src = ""; // Limpa o iframe para não vazar dados
+        }
+        // ======================================================
+        // <<< FIM DA ATUALIZAÇÃO >>>
+        // ======================================================
+
         window.location.href = 'index.html'; // Corrigido de login.html para index.html (onde está o login)
     };
 
