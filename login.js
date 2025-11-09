@@ -126,7 +126,7 @@
             if (error) throw error;
 
             // Sucesso! O Supabase guarda o token no localStorage
-            window.location.href = 'index.html'; // Redireciona para o app
+            window.location.href = 'app.html'; // Redireciona para o app
 
         } catch (error) {
             console.error('Erro de login:', error);
