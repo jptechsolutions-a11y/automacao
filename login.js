@@ -100,7 +100,7 @@
             const { data: { session } } = await supabase.auth.getSession();
             if (session) {
                 console.log('Sessão ativa encontrada, redirecionando...');
-                window.location.href = 'index.html'; // Redireciona para o app
+                window.location.href = 'app.html'; // Redireciona para o app
             }
 
         } catch (error) {
