@@ -169,17 +169,49 @@
                                 </div>
                             </div>
 
-                            <!-- Etapa 2: Colar Dados -->
+                            <!-- ====================================================== -->
+                            <!-- <<< INÍCIO DA ATUALIZAÇÃO: ABAS DE COLAR/IMPORTAR >>> -->
+                            <!-- ====================================================== -->
+                            <!-- Etapa 2: Método de Entrada (Colar ou Importar) -->
                             <div class="info-card mb-6">
-                                <h2 class="text-xl font-semibold mb-4 text-gray-700">2. Colar Dados do Sistema</h2>
-                                <p class="text-sm text-gray-600 mb-4">
-                                    Cole os dados copiados do seu sistema interno. (Sem cabeçalho).
-                                </p>
-                                <textarea id="dataInput" rows="10" class="form-input font-mono" placeholder="Cole os dados aqui..."></textarea>
-                                <button id="processButton" class="btn btn-primary w-full mt-4 disabled:opacity-50" disabled>
+                                <h2 class="text-xl font-semibold mb-4 text-gray-700">2. Inserir Dados</h2>
+                                
+                                <!-- Navegação das Abas -->
+                                <div class="imob-tab-nav mb-4">
+                                    <button id="imobPasteTab" class="imob-tab-btn active">
+                                        <i data-feather="clipboard" class="h-4 w-4 mr-2"></i> Colar Dados
+                                    </button>
+                                    <button id="imobUploadTab" class="imob-tab-btn">
+                                        <i data-feather="upload" class="h-4 w-4 mr-2"></i> Importar Arquivo
+                                    </button>
+                                </div>
+
+                                <!-- Painel de Colar (Padrão) -->
+                                <div id="pastePanel" class="tab-panel active">
+                                    <p class="text-sm text-gray-600 mb-4">
+                                        Cole os dados copiados do seu sistema interno. (Sem cabeçalho).
+                                    </p>
+                                    <textarea id="dataInput" rows="10" class="form-input font-mono" placeholder="Cole os dados aqui..."></textarea>
+                                </div>
+
+                                <!-- Painel de Importar (Escondido) -->
+                                <div id="uploadPanel" class="tab-panel" style="display: none;">
+                                    <p class="text-sm text-gray-600 mb-4">
+                                        Para grandes volumes, faça o upload de um arquivo de texto (.txt, .csv, .tsv). O conteúdo será carregado na área de texto para processamento.
+                                    </p>
+                                    <input type="file" id="imobFileInput" class="form-input" accept=".txt,.csv,.tsv,.log">
+                                    <p id="fileStatus" class="text-xs text-gray-500 mt-2"></p>
+                                </div>
+
+                                <!-- Botão de Processar (agora fora das abas) -->
+                                <button id="processButton" class="btn btn-primary w-full mt-6 disabled:opacity-50" disabled>
                                     <i data-feather="refresh-cw" class="h-4 w-4 mr-2"></i> Processar e Validar Dados
                                 </button>
                             </div>
+                            <!-- ====================================================== -->
+                            <!-- <<< FIM DA ATUALIZAÇÃO >>> -->
+                            <!-- ====================================================== -->
+
 
                             <!-- Etapa 3: Prévia -->
                             <div id="previewSection" class="info-card hidden">
