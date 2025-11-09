@@ -231,52 +231,117 @@
                         <!-- (Todo o conteúdo de upload antigo vai aqui dentro) -->
                         <!-- ====================================================== -->
                         <div id="imobSubPanel_Update" class="imob-sub-panel active">
+                            
                             <!-- ====================================================== -->
-                            <!-- ADICIONADO "imobUploaderForm" PARA ESCONDER/MOSTRAR -->
+                            <!-- <<< CORREÇÃO: A ESTRUTURA ABAIXO HAVIA SIDO APAGADA >>> -->
                             <!-- ====================================================== -->
-                            <!-- <<< INÍCIO DA ATUALIZAÇÃO: ABAS DE COLAR/IMPORTAR >>> -->
-                            <!-- ====================================================== -->
-                            <!-- Etapa 2: Método de Entrada (Colar ou Importar) -->
-                            <div class="info-card mb-6">
-                                <h2 class="text-xl font-semibold mb-4 text-gray-700">2. Inserir Dados</h2>
+
+                            <!-- O wrapper do formulário (controla a exibição do sucesso) -->
+                            <div id="imobUploaderForm" style="display: block;">
                                 
-                                <!-- Navegação das Abas -->
-                                <div class="imob-tab-nav mb-4">
-                                    <button id="imobPasteTab" class="imob-tab-btn active">
-                                        <i data-feather="clipboard" class="h-4 w-4 mr-2"></i> Colar Dados
-                                    </button>
-                                    <button id="imobUploadTab" class="imob-tab-btn">
-                                        <i data-feather="upload" class="h-4 w-4 mr-2"></i> Importar Arquivo
-                                    </button>
-                                </div>
-
-                                <!-- Painel de Colar (Padrão) -->
-                                <div id="pastePanel" class="tab-panel active">
+                                <!-- Etapa 1: Filtros (RESTAURADO) -->
+                                <div class="info-card mb-6">
+                                    <h2 class="text-xl font-semibold mb-4 text-gray-700">1. Filtros de Inserção</h2>
                                     <p class="text-sm text-gray-600 mb-4">
-                                        Cole os dados copiados do seu sistema interno. (Sem cabeçalho).
+                                        Preencha os valores que serão aplicados a todas as linhas novas.
                                     </p>
-                                    <textarea id="dataInput" rows="10" class="form-input font-mono" placeholder="Cole os dados aqui..."></textarea>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label for="filterEmpresa" class="block text-sm font-medium text-gray-600">Empresa (Filial)</label>
+                                            <select id="filterEmpresa" class="form-input">
+                                                <option value="">Carregando empresas...</option>
+                                            </select>
+                                            <p class="text-xs text-gray-500 mt-1">Selecione a Empresa/Filial.</p>
+                                        </div>
+                                        <div>
+                                            <label for="filterProduto" class="block text-sm font-medium text-gray-600">Produto</label>
+                                            <select id="filterProduto" class="form-input">
+                                                <option value="">Carregando produtos...</option>
+                                            </select>
+                                            <p class="text-xs text-gray-500 mt-1">Selecione o produto a ser aplicado.</p>
+                                        </div>
+                                    </div>
                                 </div>
 
-                                <!-- Painel de Importar (Escondido) -->
-                                <div id="uploadPanel" class="tab-panel" style="display: none;">
-                                    <p class="text-sm text-gray-600 mb-4">
-                                        Para grandes volumes, faça o upload de um arquivo de texto (.txt, .csv, .tsv). O conteúdo será carregado na área de texto para processamento.
-                                    </p>
-                                    <input type="file" id="imobFileInput" class="form-input" accept=".txt,.csv,.tsv,.log">
-                                    <p id="fileStatus" class="text-xs text-gray-500 mt-2"></p>
+                                <!-- Etapa 2: Colar Dados (JÁ EXISTIA) -->
+                                <div class="info-card mb-6">
+                                    <h2 class="text-xl font-semibold mb-4 text-gray-700">2. Inserir Dados</h2>
+                                    
+                                    <!-- Navegação das Abas -->
+                                    <div class="imob-tab-nav mb-4">
+                                        <button id="imobPasteTab" class="imob-tab-btn active">
+                                            <i data-feather="clipboard" class="h-4 w-4 mr-2"></i> Colar Dados
+                                        </button>
+                                        <button id="imobUploadTab" class="imob-tab-btn">
+                                            <i data-feather="upload" class="h-4 w-4 mr-2"></i> Importar Arquivo
+                                        </button>
+                                    </div>
+
+                                    <!-- Painel de Colar (Padrão) -->
+                                    <div id="pastePanel" class="tab-panel active">
+                                        <p class="text-sm text-gray-600 mb-4">
+                                            Cole os dados copiados do seu sistema interno. (Sem cabeçalho).
+                                        </p>
+                                        <textarea id="dataInput" rows="10" class="form-input font-mono" placeholder="Cole os dados aqui..."></textarea>
+                                    </div>
+
+                                    <!-- Painel de Importar (Escondido) -->
+                                    <div id="uploadPanel" class="tab-panel" style="display: none;">
+                                        <p class="text-sm text-gray-600 mb-4">
+                                            Para grandes volumes, faça o upload de um arquivo de texto (.txt, .csv, .tsv). O conteúdo será carregado na área de texto para processamento.
+                                        </p>
+                                        <input type="file" id="imobFileInput" class="form-input" accept=".txt,.csv,.tsv,.log">
+                                        <p id="fileStatus" class="text-xs text-gray-500 mt-2"></p>
+                                    </div>
+
+                                    <!-- Botão de Processar (agora fora das abas) -->
+                                    <button id="processButton" class="btn btn-primary w-full mt-6 disabled:opacity-50" disabled>
+                                        <i data-feather="refresh-cw" class="h-4 w-4 mr-2"></i> Processar e Validar Dados
+                                    </button>
                                 </div>
 
-                                <!-- Botão de Processar (agora fora das abas) -->
-                                <button id="processButton" class="btn btn-primary w-full mt-6 disabled:opacity-50" disabled>
-                                    <i data-feather="refresh-cw" class="h-4 w-4 mr-2"></i> Processar e Validar Dados
-                                </button>
+                                <!-- Etapa 3: Prévia (RESTAURADO) -->
+                                <div id="previewSection" class="info-card hidden">
+                                    <h2 class="text-xl font-semibold mb-4 text-gray-700">3. Prévia dos Dados para Inserção</h2>
+                                    <p id="previewSummary" class="text-sm text-gray-600 mb-4"></p>
+                                    <div class="overflow-x-auto max-h-96 border border-gray-200 rounded-md">
+                                        <table class="min-w-full divide-y divide-gray-200">
+                                            <thead class="bg-gray-50">
+                                                <tr id="previewHeader"></tr>
+                                            </thead>
+                                            <tbody id="previewBody" class="bg-white divide-y divide-gray-200"></tbody>
+                                        </table>
+                                    </div>
+                                    <button id="insertButton" class="btn btn-success w-full mt-6 disabled:opacity-50">
+                                        <i data-feather="database" class="h-4 w-4 mr-2"></i> Confirmar e Inserir Linhas no Banco
+                                    </button>
+                                    <p id="insertStatus" class="text-sm text-center text-gray-500 mt-4"></p>
+                                </div>
                             </div>
-                            <!-- ====================================================== -->
-                            <!-- <<< FIM DA ATUALIZAÇÃO >>> -->
-                            <!-- ====================================================== -->
 
-
+                            <!-- Tela de Sucesso (RESTAURADO) -->
+                            <div id="imobSuccessScreen" class="success-animation-container" style="display: none;">
+                                <div class="success-icon">
+                                    <div class="circle"></div>
+                                    <div class="checkmark"></div>
+                                </div>
+                                <h2 class="text-2xl font-semibold text-gray-800 mb-2">Inserção Concluída!</h2>
+                                <p class="text-gray-600 mb-8">Os dados foram enviados com sucesso para o banco do B.I.</p>
+                                
+                                <div class="flex flex-col sm:flex-row gap-4">
+                                    <button id="imobSuccessAgainBtn" class="btn btn-secondary w-full sm:w-auto">
+                                        <i data-feather="upload" class="h-4 w-4 mr-2"></i> Inserir Novo Lote
+                                    </button>
+                                    <button id="imobSuccessHomeBtn" class="btn btn-primary w-full sm:w-auto">
+                                        <i data-feather="home" class="h-4 w-4 mr-2"></i> Voltar para Home
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- ====================================================== -->
+                            <!-- <<< FIM DA CORREÇÃO >>> -->
+                            <!-- ====================================================== -->
+                            
                         </div>
                         <!-- ====================================================== -->
                         <!-- <<< FIM DO PAINEL DE ATUALIZAÇÃO >>> -->
