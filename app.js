@@ -18,20 +18,11 @@ window.GG = {};
     let globalRowsToInsert = [];
 
     // ======================================================
-    // <<< INÍCIO DA ATUALIZAÇÃO: Bloco de Configuração de Painéis >>>
+    // <<< ATUALIZAÇÃO: Bloco de Configuração Removido >>>
     // ======================================================
-    // Centralize todos os seus links do Looker Studio aqui.
-    const LOOKER_PANELS = {
-        'imob': {
-            'embedUrl': 'https://YOUR-LOOKER-EMBED-URL-HERE', // <-- TROQUE AQUI
-            'displayName': 'Visualização do Painel IMOB'
-        },
-        'vendas': {
-            'embedUrl': 'https://SEU-LINK-DO-PAINEL-VENDAS-AQUI', // <-- Exemplo para o futuro
-            'displayName': 'Visualização do Painel Vendas'
-        }
-        // Adicione mais painéis aqui no futuro (ex: 'financeiro': { ... })
-    };
+    // O objeto LOOKER_PANELS foi removido.
+    // Vamos usar uma variável global para carregar do banco.
+    let globalPanelConfig = new Map();
     // ======================================================
     // <<< FIM DA ATUALIZAÇÃO >>>
     // ======================================================
@@ -158,8 +149,9 @@ window.GG = {};
             const iframe = document.getElementById('lookerIframe');
             const title = document.getElementById('lookerTitle');
             
-            if (panelKey && LOOKER_PANELS[panelKey] && iframe && title) {
-                const panelData = LOOKER_PANELS[panelKey];
+            // <<< ATUALIZAÇÃO: Lendo do globalPanelConfig (Map) >>>
+            if (panelKey && globalPanelConfig.has(panelKey) && iframe && title) {
+                const panelData = globalPanelConfig.get(panelKey);
                 title.textContent = panelData.displayName; // Atualiza o título da página
                 
                 // Só carrega se for diferente, para não recarregar à toa
@@ -171,9 +163,27 @@ window.GG = {};
                     setTimeout(() => GG.showLoading(false), 2000); 
                 }
             } else if (iframe && title) {
-                // Se não encontrar a chave (ex: link quebrado)
-                title.textContent = "Erro: Painel não encontrado";
+                title.textContent = "Erro: Painel não encontrado ou não configurado";
                 iframe.src = "";
+            }
+        }
+        // ======================================================
+        // <<< FIM DA ATUALIZAÇÃO >>>
+        // ======================================================
+
+        // ======================================================
+        // <<< INÍCIO DA ATUALIZAÇÃO: Popular tela de Configurações >>>
+        // ======================================================
+        if (viewId === 'settingsView') {
+            // Popula os campos de input com os valores atuais do Map
+            const imobInput = document.getElementById('settingLinkImob');
+            const vendasInput = document.getElementById('settingLinkVendas');
+
+            if (imobInput && globalPanelConfig.has('imob')) {
+                imobInput.value = globalPanelConfig.get('imob').embedUrl || '';
+            }
+            if (vendasInput && globalPanelConfig.has('vendas')) {
+                vendasInput.value = globalPanelConfig.get('vendas').embedUrl || '';
             }
         }
         // ======================================================
@@ -271,6 +281,15 @@ window.GG = {};
             
             // <<< ADICIONADO: Popula os dropdowns de filtro >>>
             populateDropdowns(); 
+
+            // ======================================================
+            // <<< INÍCIO DA ATUALIZAÇÃO: Carregar configs e iniciar settings >>>
+            // ======================================================
+            initSettingsPage(); // Prepara os botões da página de config
+            await loadGlobalConfig(); // Carrega os links do Supabase
+            // ======================================================
+            // <<< FIM DA ATUALIZAÇÃO >>>
+            // ======================================================
             
             GG.showView('homeView', document.querySelector('a[href="#home"]'));
         }
@@ -600,6 +619,111 @@ window.GG = {};
             feather.replace();
         }
     }
+
+    // ======================================================
+    // <<< INÍCIO DA ATUALIZAÇÃO: Novas Funções de Configuração >>>
+    // ======================================================
+
+    /**
+     * Carrega os links dos painéis do Supabase para a memória (globalPanelConfig).
+     */
+    async function loadGlobalConfig() {
+        if (!supabase) return;
+        GG.showLoading(true, 'Carregando configurações...');
+        
+        const { data, error } = await supabase
+            .from('painel_links')
+            .select('*');
+
+        if (error) {
+            console.error('Erro ao carregar links dos painéis:', error);
+            GG.showLoading(false);
+            return;
+        }
+
+        // Limpa o mapa e recarrega
+        globalPanelConfig.clear();
+        data.forEach(panel => {
+            globalPanelConfig.set(panel.painel_key, {
+                displayName: panel.display_name,
+                embedUrl: panel.embed_url
+            });
+        });
+
+        console.log('Configuração de painéis carregada:', globalPanelConfig);
+        GG.showLoading(false);
+    }
+
+    /**
+     * Inicializa a lógica da página de Configurações (botão Salvar).
+     */
+    function initSettingsPage() {
+        const saveButton = document.getElementById('saveSettingsBtn');
+        if (saveButton) {
+            saveButton.addEventListener('click', handleSaveSettings);
+        }
+    }
+
+    /**
+     * Pega os valores dos inputs da página de Configurações e salva no Supabase.
+     */
+    async function handleSaveSettings() {
+        if (!supabase) return;
+        GG.showLoading(true, 'Salvando configurações...');
+
+        const imobLink = document.getElementById('settingLinkImob').value;
+        const vendasLink = document.getElementById('settingLinkVendas').value;
+
+        // Prepara os dados para o 'upsert'.
+        // 'upsert' atualiza se 'painel_key' existir, ou insere se não existir.
+        const dataToSave = [
+            { 
+                painel_key: 'imob', 
+                embed_url: imobLink,
+                display_name: 'Visualização do Painel IMOB' // O nome pode ser salvo aqui tbm
+            },
+            { 
+                painel_key: 'vendas', 
+                embed_url: vendasLink,
+                display_name: 'Visualização do Painel Vendas'
+            }
+        ];
+
+        const { error } = await supabase
+            .from('painel_links')
+            .upsert(dataToSave, { onConflict: 'painel_key' }); // Chave de conflito
+
+        if (error) {
+            console.error('Erro ao salvar configurações:', error);
+            GG.showLoading(false);
+            // (Opcional: mostrar alerta de erro)
+            return;
+        }
+
+        // Sucesso! Atualiza o mapa local para não precisar recarregar a página.
+        dataToSave.forEach(panel => {
+            globalPanelConfig.set(panel.painel_key, {
+                displayName: panel.display_name,
+                embedUrl: panel.embed_url
+            });
+        });
+
+        GG.showLoading(false);
+        console.log('Configurações salvas e mapa local atualizado.');
+
+        // Mostra um alerta de sucesso
+        const alertContainer = document.getElementById('settingsAlertContainer');
+        if(alertContainer) {
+            alertContainer.innerHTML = `<div class="alert alert-success">Configurações salvas com sucesso!</div>`;
+            // Limpa o alerta depois de 3 segundos
+            setTimeout(() => { alertContainer.innerHTML = ''; }, 3000);
+        }
+    }
+
+    // ======================================================
+    // <<< FIM DA ATUALIZAÇÃO >>>
+    // ======================================================
+
 
     /**
      * Pega as linhas processadas e insere no Supabase.
