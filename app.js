@@ -969,7 +969,14 @@ window.GG = {};
             empresas.forEach(empresa => {
                 const option = document.createElement('option');
                 option.value = empresa.codigo_empresa; // Ex: "101"
-                option.textContent = empresa.nome_empresa; // Ex: "101 - Filial Cuiabá"
+                
+                // ======================================================
+                // <<< INÍCIO DA ATUALIZAÇÃO: Adicionar código ao texto >>>
+                // ======================================================
+                option.textContent = `${empresa.codigo_empresa} - ${empresa.nome_empresa}`; // Ex: "101 - Filial Cuiabá"
+                // ======================================================
+                // <<< FIM DA ATUALIZAÇÃO >>>
+                // ======================================================
                 
                 // AJUSTE: Adicionar data-attributes
                 option.dataset.nome = empresa.nome_empresa || '';
@@ -995,7 +1002,14 @@ window.GG = {};
                 
                 // AJUSTE: Usar codigo_produto como value
                 option.value = produto.codigo_produto; // Ex: 500
-                option.textContent = produto.nome_produto; // Ex: "PALLET"
+                
+                // ======================================================
+                // <<< INÍCIO DA ATUALIZAÇÃO: Adicionar código ao texto >>>
+                // ======================================================
+                option.textContent = `${produto.codigo_produto} - ${produto.nome_produto}`; // Ex: "500 - PALLET"
+                // ======================================================
+                // <<< FIM DA ATUALIZAÇÃO >>>
+                // ======================================================
                 
                 // AJUSTE: Adicionar data-attributes
                 option.dataset.nome = produto.nome_produto || '';
