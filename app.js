@@ -1043,7 +1043,17 @@ window.GG = {};
     function parsePastedData(text) {
         const rows = text.trim().split('\n');
         return rows.map(row => {
-            const values = row.split('\t'); // Separador TAB
+            
+            // ======================================================
+            // <<< INÍCIO DA ATUALIZAÇÃO: Corrigir separador >>>
+            // ======================================================
+            // O erro "invalid input syntax" mostrou que o separador
+            // do arquivo de importação é ';', e não '\t' (TAB).
+            const values = row.split(';'); // Separador PONTO E VÍRGULA
+            // ======================================================
+            // <<< FIM DA ATUALIZAÇÃO >>>
+            // ======================================================
+
             let obj = {};
             COLUMN_MAP.forEach((colName, index) => {
                 const value = values[index];
