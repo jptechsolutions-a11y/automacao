@@ -40,10 +40,14 @@ window.GG = {};
         'QUANTIDADE': 'bigint',
         'SALDO': 'bigint',
         'ID': 'bigint',
-        'Emp': 'bigint',
+        'Emp': 'bigint', // Este será o codigo_empresa
         'ano': 'bigint',
         'DATA': 'timestamp',
-        'data2': 'timestamp'
+        'data2': 'timestamp',
+        // --- NOVOS CAMPOS ---
+        'codigo_produto': 'bigint',
+        'custo_unitario': 'numeric',
+        // --------------------
     };
 
     /**
@@ -497,17 +501,43 @@ window.GG = {};
         const previewSummary = document.getElementById('previewSummary');
         // Pega os dados da <textarea> (que agora recebe do 'colar' ou 'importar')
         const rawData = document.getElementById('dataInput').value; 
-        const selectedEmpresa = document.getElementById('filterEmpresa').value;
-        const selectedProduto = document.getElementById('filterProduto').value;
+        
+        // ======================================================
+        // <<< INÍCIO DA ATUALIZAÇÃO: Ler dados dos filtros (incluindo data-attributes) >>>
+        // ======================================================
+        const empresaSelect = document.getElementById('filterEmpresa');
+        const produtoSelect = document.getElementById('filterProduto');
+        
+        const selectedEmpresaOption = empresaSelect.options[empresaSelect.selectedIndex];
+        const selectedProdutoOption = produtoSelect.options[produtoSelect.selectedIndex];
+
+        // --- Valores da Empresa ---
+        const selectedEmpresaCodigo = selectedEmpresaOption.value;
+        const selectedEmpresaNome = selectedEmpresaOption.dataset.nome;
+        const selectedEmpresaUF = selectedEmpresaOption.dataset.uf;
+
+        // --- Valores do Produto ---
+        const selectedProdutoCodigo = selectedProdutoOption.value;
+        const selectedProdutoNome = selectedProdutoOption.dataset.nome; // Este era o antigo 'selectedProduto'
+        const selectedProdutoCusto = selectedProdutoOption.dataset.custo;
+        // ======================================================
+        // <<< FIM DA ATUALIZAÇÃO >>>
+        // ======================================================
 
         if (!rawData) {
             previewSummary.textContent = 'Nenhum dado inserido (colado ou importado).';
             return;
         }
-        if (!selectedEmpresa || !selectedProduto) {
+        // ======================================================
+        // <<< ATUALIZAÇÃO: Validar pelos códigos (values) >>>
+        // ======================================================
+        if (!selectedEmpresaCodigo || !selectedProdutoCodigo) {
             previewSummary.textContent = 'Selecione a Empresa e o Produto.'; // Mensagem atualizada
             return;
         }
+        // ======================================================
+        // <<< FIM DA ATUALIZAÇÃO >>>
+        // ======================================================
 
         GG.showLoading(true, 'Processando e validando...');
         previewSummary.textContent = 'Lendo dados e validando no banco...';
@@ -621,9 +651,23 @@ window.GG = {};
             // 5. Aplicar Fórmulas e Tipos
             GG.showLoading(true, 'Aplicando fórmulas e tratando dados...'); // <<< Feedback adicionado
             globalRowsToInsert = newRows.map(row => {
-                // Filtros
-                row['Emp'] = selectedEmpresa;
-                row['Produto'] = selectedProduto;
+                
+                // ======================================================
+                // <<< INÍCIO DA ATUALIZAÇÃO: Adicionar novos campos dos filtros >>>
+                // ======================================================
+                // Filtros (Empresa)
+                row['Emp'] = selectedEmpresaCodigo; // 'Emp' agora é o código
+                row['nome_empresa'] = selectedEmpresaNome; // NOVO
+                row['uf_empresa'] = selectedEmpresaUF; // NOVO
+
+                // Filtros (Produto)
+                row['Produto'] = selectedProdutoNome; // 'Produto' é o nome
+                row['codigo_produto'] = selectedProdutoCodigo; // NOVO
+                row['custo_unitario'] = selectedProdutoCusto; // NOVO
+                // ======================================================
+                // <<< FIM DA ATUALIZAÇÃO >>>
+                // ======================================================
+
 
                 // --- Fórmulas de Tratamento ---
                 let idFornecedor = null;
@@ -667,7 +711,17 @@ window.GG = {};
                         if (isNaN(row[key])) row[key] = null;
                     } else if (type === 'timestamp') {
                         row[key] = formatBRLDateToISO(row[key]) || null;
+                    } 
+                    // ======================================================
+                    // <<< ATUALIZAÇÃO: Tratar tipo numeric para custo >>>
+                    // ======================================================
+                    else if (type === 'numeric') {
+                         row[key] = row[key] ? parseFloat(row[key]) : null;
+                         if (isNaN(row[key])) row[key] = null;
                     }
+                    // ======================================================
+                    // <<< FIM DA ATUALIZAÇÃO >>>
+                    // ======================================================
                 }
                 return row;
             });
@@ -888,7 +942,7 @@ window.GG = {};
     // --- 4. FUNÇÕES UTILITÁRIAS (IMOB) ---
 
     // ======================================================
-    // <<< NOVA FUNÇÃO ADICIONADA >>>
+    // <<< INÍCIO DA ATUALIZAÇÃO: Ajuste na função populateDropdowns >>>
     // ======================================================
     /**
      * Busca dados das tabelas 'empresas' e 'produtos' e popula os dropdowns.
@@ -902,9 +956,11 @@ window.GG = {};
 
         try {
             // Buscar Empresas
+            console.log("Buscando empresas...");
             const { data: empresas, error: empresaError } = await supabase
                 .from('empresas')
-                .select('codigo_empresa, nome_empresa')
+                // AJUSTE: Adicionado 'uf' ao select
+                .select('codigo_empresa, nome_empresa, uf')
                 .order('nome_empresa', { ascending: true }); // Ordena alfabeticamente
 
             if (empresaError) throw empresaError;
@@ -914,13 +970,21 @@ window.GG = {};
                 const option = document.createElement('option');
                 option.value = empresa.codigo_empresa; // Ex: "101"
                 option.textContent = empresa.nome_empresa; // Ex: "101 - Filial Cuiabá"
+                
+                // AJUSTE: Adicionar data-attributes
+                option.dataset.nome = empresa.nome_empresa || '';
+                option.dataset.uf = empresa.uf || ''; // Armazena a UF
+                
                 empresaSelect.appendChild(option);
             });
+            console.log(empresas.length + " empresas carregadas.");
 
             // Buscar Produtos
+            console.log("Buscando produtos...");
             const { data: produtos, error: produtoError } = await supabase
                 .from('produtos')
-                .select('nome_produto')
+                // AJUSTE: Adicionado 'codigo_produto' e 'custo_unitario'
+                .select('codigo_produto, nome_produto, custo_unitario')
                 .order('nome_produto', { ascending: true }); // Ordena alfabeticamente
 
             if (produtoError) throw produtoError;
@@ -928,10 +992,19 @@ window.GG = {};
             produtoSelect.innerHTML = '<option value="">Selecione um Produto</option>'; // Limpa o "Carregando..."
             produtos.forEach(produto => {
                 const option = document.createElement('option');
-                option.value = produto.nome_produto; // Ex: "PALLET"
+                
+                // AJUSTE: Usar codigo_produto como value
+                option.value = produto.codigo_produto; // Ex: 500
                 option.textContent = produto.nome_produto; // Ex: "PALLET"
+                
+                // AJUSTE: Adicionar data-attributes
+                option.dataset.nome = produto.nome_produto || '';
+                option.dataset.custo = produto.custo_unitario || 0; // Armazena o custo
+                
                 produtoSelect.appendChild(option);
             });
+            console.log(produtos.length + " produtos carregados.");
+
 
         } catch (error) {
             console.error('Erro ao popular dropdowns:', error);
@@ -941,7 +1014,7 @@ window.GG = {};
         }
     }
     // ======================================================
-    // <<< FIM DA NOVA FUNÇÃO >>>
+    // <<< FIM DA ATUALIZAÇÃO >>>
     // ======================================================
 
     function parsePastedData(text) {
@@ -1021,8 +1094,21 @@ window.GG = {};
         rowsToRender.forEach(row => { // <<< ATUALIZADO: usa rowsToRender
             let rowHtml = '<tr>';
             columns.forEach(col => {
+                // ======================================================
+                // <<< INÍCIO DA ATUALIZAÇÃO: Destacar novas colunas >>>
+                // ======================================================
                 // Colunas modificadas/adicionadas
-                const isModified = (col === 'Emp' || col === 'Produto' || col === 'loja' || col === 'Segmento' || col === 'ano' || col === 'ID' || col === 'fornecedor');
+                const isModified = (
+                    col === 'Emp' || col === 'Produto' || col === 'loja' || col === 'Segmento' || 
+                    col === 'ano' || col === 'ID' || col === 'fornecedor' ||
+                    // --- NOVAS COLUNAS DESTACADAS ---
+                    col === 'nome_empresa' || col === 'uf_empresa' || 
+                    col === 'codigo_produto' || col === 'custo_unitario'
+                );
+                // ======================================================
+                // <<< FIM DA ATUALIZAÇÃO >>>
+                // ======================================================
+                
                 rowHtml += `<td class="px-4 py-3 whitespace-nowrap text-sm ${isModified ? 'bg-yellow-100 font-medium' : 'text-gray-700'}">${row[col] !== null ? row[col] : ''}</td>`;
             });
             rowHtml += '</tr>';
