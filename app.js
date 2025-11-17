@@ -1042,14 +1042,36 @@ window.GG = {};
 
     function parsePastedData(text) {
         const rows = text.trim().split('\n');
+
+        // ======================================================
+        // <<< INÍCIO DA ATUALIZAÇÃO: Auto-detectar separador >>>
+        // ======================================================
+        // Vamos detectar automaticamente se o separador é TAB ('\t') ou Ponto e Vírgula (';')
+        let separator = '\t'; // Define o TAB como padrão (para Copiar/Colar)
+
+        if (rows.length > 0) {
+            const firstLine = rows[0];
+            const tabCount = (firstLine.match(/\t/g) || []).length; // Conta quantos TABs
+            const semiCount = (firstLine.match(/;/g) || []).length; // Conta quantos ;
+
+            // Se encontrar mais Ponto e Vírgula, usa ele.
+            // Isso funciona para o "Importar".
+            if (semiCount > tabCount) {
+                separator = ';';
+            }
+        }
+        // ======================================================
+        // <<< FIM DA ATUALIZAÇÃO >>>
+        // ======================================================
+
         return rows.map(row => {
             
             // ======================================================
-            // <<< INÍCIO DA ATUALIZAÇÃO: Corrigir separador >>>
+            // <<< ATUALIZAÇÃO: Usar o separador detectado >>>
             // ======================================================
             // O erro "invalid input syntax" mostrou que o separador
             // do arquivo de importação é ';', e não '\t' (TAB).
-            const values = row.split(';'); // Separador PONTO E VÍRGULA
+            const values = row.split(separator); // Usa o separador (';' ou '\t')
             // ======================================================
             // <<< FIM DA ATUALIZAÇÃO >>>
             // ======================================================
