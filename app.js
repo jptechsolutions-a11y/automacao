@@ -558,7 +558,16 @@ window.GG = {};
             // ======================================================
             GG.showLoading(true, 'Verificando duplicados no banco...');
             const existingSeqSet = new Set();
-            const CHUNK_SIZE = 500; // Define o tamanho do lote
+            
+            // ======================================================
+            // <<< ATUALIZAÇÃO: Diminuir o CHUNK_SIZE >>>
+            // ======================================================
+            // O valor de 500 estava estourando o limite da URL por 
+            // causa dos códigos longos. Reduzindo para 100.
+            const CHUNK_SIZE = 100; // Define o tamanho do lote
+            // ======================================================
+            // <<< FIM DA ATUALIZAÇÃO >>>
+            // ======================================================
             
             // 1. Criar um array de promessas
             const duplicateCheckPromises = [];
