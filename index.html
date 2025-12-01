@@ -3,148 +3,369 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- ATUALIZADO: Título -->
-    <title>Acesso | Automação de Painéis B.I.</title>
-    <link rel="icon" href="fav.png" type="image/png">
-    <!-- Carrega o style.css (seu modelo) -->
+    <title>Atualização de Painéis - B.I.</title>
+    <link rel="icon" href="fav.png" type="image/png"> 
+    <meta name="theme-color" content="#011627">
+    
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        .looker-iframe {
+            width: 100%;
+            height: 100%;
+            min-height: 80vh;
+        }
+        .imob-sub-nav {
+            display: flex;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        .imob-sub-btn {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            border: none;
+            background: none;
+            cursor: pointer;
+            color: #6b7280;
+            border-bottom: 3px solid transparent;
+            transform: translateY(2px);
+            transition: all 0.2s ease;
+        }
+        .imob-sub-btn:hover {
+            color: #1f2937;
+            background-color: #f9fafb;
+        }
+        .imob-sub-btn.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+        }
+        .imob-sub-panel {
+            display: none;
+        }
+        .imob-sub-panel.active {
+            display: block;
+            animation: fadeIn 0.4s ease-out;
+        }
+        #imobSubPanel_Panel .info-card, #movSubPanel_Panel .info-card {
+            height: 100vh;
+            max-height: calc(100vh - 200px);
+        }
+    </style>
 </head>
-<body class="login-body">
+<body class="bg-gray-100">
 
-    <div class="auth-container">
-        <!-- Overlay de Fundo com Blur -->
-        <div class="auth-blur-overlay"></div>
-        
-        <div class="auth-grid-container">
+    <div id="appShell" class="h-screen flex flex-col">
+
+        <!-- Barra do Topo -->
+        <header id="topBar" class="flex-shrink-0">
+            <div class="flex items-center gap-4">
+                <button id="sidebarToggle" class="btn-icon">
+                    <i data-feather="menu" class="h-5 w-5"></i>
+                </button>
+                <img src="https://placehold.co/100x40/011627/FFF?text=Pain%C3%A9is" class="h-8 w-auto" alt="Logo Painéis">
+                <div class="separator"></div>
+                <div class="flex flex-col">
+                    <span class="text-sm font-semibold text-white">Painel de B.I.</span>
+                    <span class="text-xs text-gray-400">Automação de B.I.</span>
+                </div>
+            </div>
             
-            <!-- COLUNA DA ESQUERDA (FORMULÁRIOS) -->
-            <div>
-                <!-- Card de Login -->
-                <div class="auth-card" id="loginCard">
-                    <div class="auth-header" style="text-align: center;">
-                        <!-- ATUALIZADO: Logo e Títulos -->
-                        <img src="https://placehold.co/160x60/FFFFFF/011627?text=Pain%C3%A9is+B.I." alt="Logo Painéis B.I." class="block w-40 h-auto mb-6 mx-auto object-contain">
-                        <h2 id="formTitle">Acesso ao Sistema</h2>
-                        <p id="formSubtitle">Automação de Atualização de Painéis</p>
-                    </div>
-
-                    <div id="loginAlert"></div>
-
-                    <!-- Formulário de Login -->
-                    <form id="loginForm" class="auth-form">
-                        <div class="form-group" style="margin-bottom: 20px;">
-                            <input type="email" id="loginEmail" placeholder="E-mail" required class="w-full">
-                        </div>
-                        <div class="form-group" style="margin-bottom: 20px;">
-                            <input type="password" id="loginPassword" placeholder="Senha" required class="w-full">
-                        </div>
-                        
-                        <button id="loginSubmitBtn" type="submit" class="btn-gradient">
-                            ENTRAR
-                        </button>
-                    </form>
-                    
-                    <div class="mt-6 text-center text-sm">
-                        <a href="#forgot" id="forgotLink" class="text-blue-600 hover:underline">Esqueceu sua senha?</a>
-                        <span class="mx-2 text-gray-400">|</span>
-                        <a href="#request" id="requestLink" class="text-blue-600 hover:underline">Solicitar Acesso</a>
-                    </div>
-                </div>
-
-                <!-- Card de Solicitação de Acesso -->
-                <div class="auth-card" id="requestAccessCard" style="display: none;">
-                    <div class="auth-header" style="text-align: center;">
-                        <img src="https://placehold.co/160x60/FFFFFF/011627?text=Pain%C3%A9is+B.I." alt="Logo Painéis B.I." class="block w-40 h-auto mb-6 mx-auto object-contain">
-                        <h2 id="formTitleRequest">Solicitar Acesso</h2>
-                        <p id="formSubtitleRequest">Preencha seus dados para solicitar sua conta.</p>
-                    </div>
-                    
-                    <div id="requestAlert"></div>
-
-                    <form id="requestAccessForm" class="auth-form">
-                        <div class="form-group" style="margin-bottom: 20px;">
-                            <input type="text" id="requestNome" placeholder="Seu Nome Completo" required class="w-full">
-                        </div>
-                        <div class="form-group" style="margin-bottom: 20px;">
-                            <input type="email" id="requestEmail" placeholder="seu.email@empresa.com" required class="w-full">
-                        </div>
-                         <div class="form-group" style="margin-bottom: 20px;">
-                            <input type="password" id="requestPassword" placeholder="Crie uma senha" required class="w-full">
-                        </div>
-                        
-                        <button id="requestSubmitBtn" type="submit" class="btn-gradient">
-                            Enviar Solicitação
-                        </button>
-                    </form>
-                    
-                    <div class="mt-6 text-center text-sm">
-                        <span>Já tem uma conta?</span>
-                        <a href="#login" id="loginLinkRequest" class="font-semibold" style="color: var(--accent);">Entrar</a>
-                    </div>
-                </div>
-
-                <!-- Card de Recuperar Senha -->
-                <div class="auth-card" id="forgotCard" style="display: none;">
-                    <div class="auth-header" style="text-align: center;">
-                        <img src="https://placehold.co/160x60/FFFFFF/011627?text=Pain%C3%A9is+B.I." alt="Logo Painéis B.I." class="block w-40 h-auto mb-6 mx-auto object-contain">
-                        <h2>Recuperar Senha</h2>
-                        <p>Digite seu e-mail para redefinir a senha.</p>
-                    </div>
-                    
-                    <div id="forgotAlert"></div>
-
-                    <form id="forgotForm" class="auth-form">
-                        <div class="form-group" style="margin-bottom: 20px;">
-                            <input type="email" id="forgotEmail" placeholder="E-mail" required class="w-full">
-                        </div>
-                        <button id="forgotSubmitBtn" type="submit" class="btn-gradient">
-                            Enviar Link de Redefinição
-                        </button>
-                    </form>
-                    
-                    <div class="mt-6 text-center text-sm">
-                        <a href="#login" id="loginLinkForgot" class="font-semibold" style="color: var(--accent);">Voltar para Login</a>
-                    </div>
-                </div>
-
+            <div class="flex-1 flex justify-center px-8"></div>
+            
+            <div class="flex items-center gap-4">
+                <button onclick="window.GG.logout()" class="btn-icon" title="Sair">
+                    <i data-feather="log-out" class="h-5 w-5"></i>
+                </button>
             </div>
+        </header>
 
-            <!-- COLUNA DA DIREITA (INFORMAÇÕES) -->
-            <div class="auth-info-grid">
-                <div class="info-card info-card-gradient">
-                    <h3 class="text-2xl font-bold mb-3">AUTOMAÇÃO DE DADOS, DECISÕES RÁPIDAS.</h3>
-                    <p>Centralize a atualização dos seus painéis de B.I. com precisão, agilidade e total rastreabilidade.</p>
-                </div>
+        <div id="mainSystem" class="flex flex-1 overflow-hidden">
 
-                <div class="info-card info-card-white">
-                    <h4>FLUXO SIMPLIFICADO</h4>
-                    <h5>ETAPAS DA ATUALIZAÇÃO IMOB</h5>
+            <!-- Sidebar -->
+            <aside class="sidebar collapsed">
+                <nav class="p-2 pt-4">
+                    <a href="#home" class="nav-item" title="Home" onclick="window.GG.showView('homeView', this)">
+                        <i data-feather="home" class="h-5 w-5 mr-3"></i> <span class="nav-text">Home</span>
+                    </a>
                     
-                    <ul class="list-none space-y-2">
-                        <li><span style="color: var(--secondary);">&#10004;</span> <span class="font-semibold">Copiar:</span> Copie os dados do seu sistema interno.</li>
-                        <li><span style="color: var(--secondary);">&#10004;</span> <span class="font-semibold">Colar:</span> Cole os dados na plataforma.</li>
-                        <li><span style="color: var(--secondary);">&#10004;</span> <span class="font-semibold">Validar:</span> O sistema filtra duplicados e aplica fórmulas (PROCV).</li>
-                        <li><span style="color: var(--secondary);">&#10004;</span> <span class="font-semibold">Inserir:</span> Os dados são inseridos no B.I. com sucesso.</li>
-                    </ul>
-                </div>
-            </div>
+                    <div class="mt-4 border-t border-gray-700 pt-2">
+                        <span class="p-3 text-xs font-semibold text-gray-500 uppercase nav-text">Logística</span>
+                    </div>
 
+                    <a href="#imob" class="nav-item" title="Upload Painel IMOB" onclick="window.GG.showView('imobView', this)">
+                        <i data-feather="upload-cloud" class="h-5 w-5 mr-3"></i> <span class="nav-text">Upload IMOB</span>
+                    </a>
+
+                    <!-- NOVO LINK: Movimentação -->
+                    <a href="#movimentacao" class="nav-item" title="Movimentação" onclick="window.GG.showView('movimentacaoView', this)">
+                        <i data-feather="activity" class="h-5 w-5 mr-3"></i> <span class="nav-text">Movimentação</span>
+                    </a>
+                    
+                    <div class="mt-4 border-t border-gray-700 pt-2">
+                        <span class="p-3 text-xs font-semibold text-gray-500 uppercase nav-text">Comercial</span>
+                    </div>
+                    
+                    <a href="#lookerVendas" class="nav-item disabled" title="Em breve" onclick="window.GG.showView('lookerView', this, 'vendas')">
+                        <i data-feather="dollar-sign" class="h-5 w-5 mr-3"></i> <span class="nav-text">Painel Vendas</span>
+                    </a>
+                    
+                    <div class="mt-auto border-t border-gray-700 pt-2">
+                        <a href="#settings" class="nav-item" title="Configurações" onclick="window.GG.showView('settingsView', this)">
+                            <i data-feather="settings" class="h-5 w-5 mr-3"></i> <span class="nav-text">Configurações</span>
+                        </a>
+                    </div>
+                </nav>
+            </aside>
+            
+            <div id="sidebarOverlay"></div>
+
+            <!-- Conteúdo Principal -->
+            <main class="main-content">
+                <div class="container mx-auto px-6 py-8">
+
+                    <!-- View 1: Home -->
+                    <div id="homeView" class="view-content active">
+                        <h1 class="text-2xl font-semibold text-gray-800 mb-6">Painéis de Atualização</h1>
+                        
+                        <div id="statusConexao" class="status-conexao mb-6">
+                            <span id="textoStatus"><i data-feather="refresh-cw" class="animate-spin h-4 w-4 mr-2"></i> Verificando conexão...</span>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <!-- Card IMOB -->
+                            <div class="panel-card" onclick="window.GG.showView('imobView', document.querySelector('a[href=\'#imob\']'))">
+                                <div class="panel-icon bg-blue-100 text-blue-600">
+                                    <i data-feather="upload-cloud"></i>
+                                </div>
+                                <h3 class="panel-title">Painel IMOB</h3>
+                                <p class="panel-description">Atualizar movimentação imobiliária/estoque geral.</p>
+                                <span class="panel-status status-active">
+                                    <i data-feather="check-circle" class="h-4 w-4"></i> Ativo
+                                </span>
+                            </div>
+
+                            <!-- Card Movimentação (NOVO) -->
+                            <div class="panel-card" onclick="window.GG.showView('movimentacaoView', document.querySelector('a[href=\'#movimentacao\']'))">
+                                <div class="panel-icon bg-green-100 text-green-600">
+                                    <i data-feather="activity"></i>
+                                </div>
+                                <h3 class="panel-title">Movimentação Detalhada</h3>
+                                <p class="panel-description">Atualizar status de atividades e produtividade logística.</p>
+                                <span class="panel-status status-active">
+                                    <i data-feather="check-circle" class="h-4 w-4"></i> Ativo
+                                </span>
+                            </div>
+
+                            <!-- Configs -->
+                            <div class="panel-card" onclick="window.GG.showView('settingsView', document.querySelector('a[href=\'#settings\']'))">
+                                <div class="panel-icon bg-gray-100 text-gray-600">
+                                    <i data-feather="settings"></i>
+                                </div>
+                                <h3 class="panel-title">Configurações</h3>
+                                <p class="panel-description">Gerenciar links dos dashboards.</p>
+                                <span class="panel-status status-active">
+                                    <i data-feather="check-circle" class="h-4 w-4"></i> Ativo
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- View 2: Uploader IMOB (Existente) -->
+                    <div id="imobView" class="view-content">
+                        <h1 class="text-2xl font-semibold text-gray-800 mb-6">Upload - Painel IMOB</h1>
+                        <div class="imob-sub-nav mb-6">
+                            <button id="imobSubTab_Update" class="imob-sub-btn active">
+                                <i data-feather="upload" class="h-4 w-4 mr-2"></i> Atualizar Dados
+                            </button>
+                            <button id="imobSubTab_Panel" class="imob-sub-btn">
+                                <i data-feather="trello" class="h-4 w-4 mr-2"></i> Visualizar Painel
+                            </button>
+                        </div>
+
+                        <div id="imobSubPanel_Update" class="imob-sub-panel active">
+                            <div id="imobUploaderForm" style="display: block;">
+                                <div class="info-card mb-6">
+                                    <h2 class="text-xl font-semibold mb-4 text-gray-700">1. Filtros de Inserção</h2>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label for="filterEmpresa" class="block text-sm font-medium text-gray-600">Empresa (Filial)</label>
+                                            <select id="filterEmpresa" class="form-input"><option value="">Carregando...</option></select>
+                                        </div>
+                                        <div>
+                                            <label for="filterProduto" class="block text-sm font-medium text-gray-600">Produto</label>
+                                            <select id="filterProduto" class="form-input"><option value="">Carregando...</option></select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="info-card mb-6">
+                                    <h2 class="text-xl font-semibold mb-4 text-gray-700">2. Inserir Dados</h2>
+                                    <div class="imob-tab-nav mb-4">
+                                        <button id="imobPasteTab" class="imob-tab-btn active"><i data-feather="clipboard" class="h-4 w-4 mr-2"></i> Colar</button>
+                                        <button id="imobUploadTab" class="imob-tab-btn"><i data-feather="upload" class="h-4 w-4 mr-2"></i> Arquivo</button>
+                                    </div>
+                                    <div id="pastePanel" class="tab-panel active">
+                                        <textarea id="dataInput" rows="10" class="form-input font-mono" placeholder="Cole os dados aqui..."></textarea>
+                                    </div>
+                                    <div id="uploadPanel" class="tab-panel" style="display: none;">
+                                        <input type="file" id="imobFileInput" class="form-input" accept=".txt,.csv,.tsv,.log">
+                                        <p id="fileStatus" class="text-xs text-gray-500 mt-2"></p>
+                                    </div>
+                                    <button id="processButton" class="btn btn-primary w-full mt-6 disabled:opacity-50" disabled>
+                                        <i data-feather="refresh-cw" class="h-4 w-4 mr-2"></i> Processar e Validar
+                                    </button>
+                                </div>
+
+                                <div id="previewSection" class="info-card hidden">
+                                    <h2 class="text-xl font-semibold mb-4 text-gray-700">3. Prévia</h2>
+                                    <p id="previewSummary" class="text-sm text-gray-600 mb-4"></p>
+                                    <div class="overflow-x-auto max-h-96 border border-gray-200 rounded-md">
+                                        <table class="min-w-full divide-y divide-gray-200">
+                                            <thead class="bg-gray-50"><tr id="previewHeader"></tr></thead>
+                                            <tbody id="previewBody" class="bg-white divide-y divide-gray-200"></tbody>
+                                        </table>
+                                    </div>
+                                    <button id="insertButton" class="btn btn-success w-full mt-6 disabled:opacity-50">
+                                        <i data-feather="database" class="h-4 w-4 mr-2"></i> Confirmar Inserção
+                                    </button>
+                                    <p id="insertStatus" class="text-sm text-center text-gray-500 mt-4"></p>
+                                </div>
+                            </div>
+
+                            <div id="imobSuccessScreen" class="success-animation-container" style="display: none;">
+                                <div class="success-icon"><div class="circle"></div><div class="checkmark"></div></div>
+                                <h2 class="text-2xl font-semibold text-gray-800 mb-2">Sucesso!</h2>
+                                <p class="text-gray-600 mb-8">Dados enviados para o banco.</p>
+                                <div class="flex flex-col sm:flex-row gap-4">
+                                    <button id="imobSuccessAgainBtn" class="btn btn-secondary w-full sm:w-auto">Inserir Novo</button>
+                                    <button id="imobSuccessHomeBtn" class="btn btn-primary w-full sm:w-auto">Home</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="imobSubPanel_Panel" class="imob-sub-panel">
+                            <div class="info-card p-0" style="overflow: hidden; height: 100vh;">
+                                <iframe id="imobLookerIframe" class="looker-iframe" src="" frameborder="0" allowfullscreen></iframe>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- View 3: Movimentação (NOVA) -->
+                    <div id="movimentacaoView" class="view-content">
+                        <h1 class="text-2xl font-semibold text-gray-800 mb-6">Upload - Movimentação</h1>
+                        
+                        <div class="imob-sub-nav mb-6">
+                            <button id="movSubTab_Update" class="imob-sub-btn active">
+                                <i data-feather="upload" class="h-4 w-4 mr-2"></i> Atualizar Dados
+                            </button>
+                            <button id="movSubTab_Panel" class="imob-sub-btn">
+                                <i data-feather="trello" class="h-4 w-4 mr-2"></i> Visualizar Painel
+                            </button>
+                        </div>
+
+                        <!-- Painel de Upload Movimentação -->
+                        <div id="movSubPanel_Update" class="imob-sub-panel active">
+                            <div id="movUploaderForm" style="display: block;">
+                                
+                                <div class="info-card mb-6">
+                                    <h2 class="text-xl font-semibold mb-4 text-gray-700">1. Inserir Dados de Movimentação</h2>
+                                    <p class="text-sm text-gray-600 mb-4">
+                                        Cole os dados conforme estrutura da tabela (NROEMPRESA, DTAHORMOVTO, ATIVIDADE...).
+                                    </p>
+                                    <textarea id="movDataInput" rows="10" class="form-input font-mono" placeholder="Cole os dados aqui (Tab ou Ponto e Vírgula)..."></textarea>
+                                    
+                                    <button id="movProcessButton" class="btn btn-primary w-full mt-6">
+                                        <i data-feather="refresh-cw" class="h-4 w-4 mr-2"></i> Processar Dados
+                                    </button>
+                                </div>
+
+                                <div id="movPreviewSection" class="info-card hidden">
+                                    <h2 class="text-xl font-semibold mb-4 text-gray-700">2. Prévia</h2>
+                                    <p id="movPreviewSummary" class="text-sm text-gray-600 mb-4"></p>
+                                    <div class="overflow-x-auto max-h-96 border border-gray-200 rounded-md">
+                                        <table class="min-w-full divide-y divide-gray-200">
+                                            <thead class="bg-gray-50"><tr id="movPreviewHeader"></tr></thead>
+                                            <tbody id="movPreviewBody" class="bg-white divide-y divide-gray-200"></tbody>
+                                        </table>
+                                    </div>
+                                    <button id="movInsertButton" class="btn btn-success w-full mt-6">
+                                        <i data-feather="database" class="h-4 w-4 mr-2"></i> Enviar para Movimentação
+                                    </button>
+                                    <p id="movInsertStatus" class="text-sm text-center text-gray-500 mt-4"></p>
+                                </div>
+                            </div>
+
+                            <div id="movSuccessScreen" class="success-animation-container" style="display: none;">
+                                <div class="success-icon"><div class="circle"></div><div class="checkmark"></div></div>
+                                <h2 class="text-2xl font-semibold text-gray-800 mb-2">Movimentação Atualizada!</h2>
+                                <p class="text-gray-600 mb-8">Os registros foram inseridos na tabela pública.</p>
+                                <div class="flex flex-col sm:flex-row gap-4">
+                                    <button id="movSuccessAgainBtn" class="btn btn-secondary w-full sm:w-auto">Inserir Novo Lote</button>
+                                    <button id="movSuccessHomeBtn" class="btn btn-primary w-full sm:w-auto">Voltar para Home</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Painel Looker Movimentação -->
+                        <div id="movSubPanel_Panel" class="imob-sub-panel">
+                            <div class="info-card p-0" style="overflow: hidden; height: 100vh;">
+                                <iframe id="movLookerIframe" class="looker-iframe" src="" frameborder="0" allowfullscreen></iframe>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- View 4: Looker Genérico (Vendas) -->
+                    <div id="lookerView" class="view-content">
+                        <h1 id="lookerTitle" class="text-2xl font-semibold text-gray-800 mb-6">Carregando Painel...</h1>
+                        <div class="info-card p-0" style="overflow: hidden; height: 80vh;">
+                            <iframe id="lookerIframe" class="looker-iframe" src="" frameborder="0" allowfullscreen></iframe>
+                        </div>
+                    </div>
+
+                    <!-- View 5: Configurações -->
+                    <div id="settingsView" class="view-content">
+                        <h1 class="text-2xl font-semibold text-gray-800 mb-6">Configurações</h1>
+                        <div id="settingsAlertContainer"></div>
+                        <div class="info-card mb-6">
+                            <h2 class="text-xl font-semibold mb-4 text-gray-700">Links de Incorporação (Looker Studio)</h2>
+                            
+                            <div class="form-group mb-6">
+                                <label for="settingLinkImob" class="block text-sm font-medium text-gray-700 mb-2">Link do Painel IMOB</label>
+                                <input type="url" id="settingLinkImob" class="form-input" placeholder="https://lookerstudio.google.com/embed/...">
+                            </div>
+
+                            <div class="form-group mb-6">
+                                <label for="settingLinkMov" class="block text-sm font-medium text-gray-700 mb-2">Link do Painel Movimentação (Novo)</label>
+                                <input type="url" id="settingLinkMov" class="form-input" placeholder="https://lookerstudio.google.com/embed/...">
+                            </div>
+
+                            <div class="form-group mb-6">
+                                <label for="settingLinkVendas" class="block text-sm font-medium text-gray-700 mb-2">Link do Painel Vendas</label>
+                                <input type="url" id="settingLinkVendas" class="form-input" placeholder="https://lookerstudio.google.com/embed/...">
+                            </div>
+
+                            <button id="saveSettingsBtn" class="btn btn-primary w-full sm:w-auto">
+                                <i data-feather="save" class="h-4 w-4 mr-2"></i> Salvar Configurações
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </main>
         </div>
     </div>
-
-    <footer class="auth-footer">
-        © 2025 - Painel de Automação B.I. | Desenvolvido por <span style="font-weight: 700;">@ Juliano Patrick </span>
-    </footer>
     
-    <!-- Tela de Loading -->
     <div class="loading" id="loading" style="display: none;"><div class="spinner"></div><p>Processando...</p></div>
+    <div id="notificationContainer"></div>
 
-    <script src="login.js"></script>
+    <script src="app.js"></script>
     <script>
         feather.replace();
-    </jsCript>
+    </script>
 </body>
 </html>
