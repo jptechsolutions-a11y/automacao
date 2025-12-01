@@ -307,32 +307,84 @@ window.GG = {};
         const btnProcess = document.getElementById('movProcessButton');
         const btnInsert = document.getElementById('movInsertButton');
         
-        // --- INJEÇÃO DE OPÇÕES DE BASE ---
-        if (btnInsert) {
-             // Injeta apenas se não existir
-             if (!document.getElementById('movOptionsContainer')) {
-                 const container = document.createElement('div');
-                 container.id = 'movOptionsContainer';
-                 container.className = 'flex flex-col sm:flex-row gap-4 mb-4 justify-center p-4 bg-gray-50 rounded border border-gray-200';
-                 container.innerHTML = `
-                    <span class="text-sm font-semibold text-gray-700 items-center flex">Atualizar Bases:</span>
-                    <label class="inline-flex items-center cursor-pointer select-none">
-                        <input type="checkbox" id="checkMovPrincipal" checked class="form-checkbox h-5 w-5 text-blue-600 rounded">
-                        <span class="ml-2 text-gray-700">Base Principal (movimentacao)</span>
-                    </label>
-                    <label class="inline-flex items-center cursor-pointer select-none">
-                        <input type="checkbox" id="checkMovSecundaria" class="form-checkbox h-5 w-5 text-blue-600 rounded">
-                        <span class="ml-2 text-gray-700">Base Secundária (Bkp/Hist)</span>
-                    </label>
-                 `;
-                 // Insere ANTES do botão de inserir
-                 btnInsert.parentNode.insertBefore(container, btnInsert);
-             }
+        // --- INJEÇÃO DA UI DE ABAS (Colar/Arquivo) se não existir ---
+        // Isso garante que tenhamos as abas sem precisar editar o HTML manualmente
+        const movDataInput = document.getElementById('movDataInput');
+        if (movDataInput && !document.getElementById('movUploadTab')) {
+            const card = movDataInput.closest('.info-card');
+            if (card) {
+                // Reescreve o conteúdo do card para incluir as abas
+                card.innerHTML = `
+                    <h2 class="text-xl font-semibold mb-4 text-gray-700">1. Inserir Dados de Movimentação</h2>
+                    
+                    <div class="imob-tab-nav mb-4">
+                        <button id="movPasteTab" class="imob-tab-btn active">
+                            <i data-feather="clipboard" class="h-4 w-4 mr-2"></i> Colar Dados
+                        </button>
+                        <button id="movUploadTab" class="imob-tab-btn">
+                            <i data-feather="upload" class="h-4 w-4 mr-2"></i> Importar Arquivo
+                        </button>
+                    </div>
+
+                    <div id="movPastePanel" class="tab-panel active">
+                        <p class="text-sm text-gray-600 mb-4">
+                            Cole os dados conforme estrutura da tabela (NROEMPRESA, DTAHORMOVTO, ...).
+                        </p>
+                        <textarea id="movDataInput" rows="10" class="form-input font-mono" placeholder="Cole os dados aqui (Tab ou Ponto e Vírgula)..."></textarea>
+                    </div>
+
+                    <div id="movUploadPanel" class="tab-panel" style="display: none;">
+                        <p class="text-sm text-gray-600 mb-4">
+                            Faça upload de um arquivo .txt ou .csv.
+                        </p>
+                        <input type="file" id="movFileInput" class="form-input" accept=".txt,.csv,.tsv,.log">
+                        <p id="movFileStatus" class="text-xs text-gray-500 mt-2"></p>
+                    </div>
+
+                    <button id="movProcessButton" class="btn btn-primary w-full mt-6">
+                        <i data-feather="refresh-cw" class="h-4 w-4 mr-2"></i> Processar Dados
+                    </button>
+                `;
+                // Atualiza ícones
+                if (typeof feather !== 'undefined') feather.replace();
+            }
         }
-        // ---------------------------------
+        // -----------------------------------------------------------
+
+        // Re-seleciona os elementos (pois o innerHTML pode tê-los recriado)
+        const newBtnProcess = document.getElementById('movProcessButton');
+        const newBtnInsert = document.getElementById('movInsertButton'); // Esse está fora do card alterado, mantém ref
         
-        if (btnProcess) btnProcess.addEventListener('click', handleProcessMovimentacao);
-        if (btnInsert) btnInsert.addEventListener('click', handleInsertMovimentacao);
+        if (newBtnProcess) newBtnProcess.addEventListener('click', handleProcessMovimentacao);
+        // O botão de inserir está em outro card (o de preview), então o listener original funciona se ele existir
+        if (newBtnInsert) newBtnInsert.addEventListener('click', handleInsertMovimentacao);
+
+        // Lógica das Abas (Movimentação)
+        const movPasteTab = document.getElementById('movPasteTab');
+        const movUploadTab = document.getElementById('movUploadTab');
+        const movPastePanel = document.getElementById('movPastePanel');
+        const movUploadPanel = document.getElementById('movUploadPanel');
+
+        if (movPasteTab && movUploadTab) {
+            movPasteTab.addEventListener('click', () => {
+                movPasteTab.classList.add('active');
+                movUploadTab.classList.remove('active');
+                movPastePanel.style.display = 'block';
+                movUploadPanel.style.display = 'none';
+            });
+            movUploadTab.addEventListener('click', () => {
+                movUploadTab.classList.add('active');
+                movPasteTab.classList.remove('active');
+                movUploadPanel.style.display = 'block';
+                movPastePanel.style.display = 'none';
+            });
+        }
+
+        // Input Arquivo Movimentação
+        const movFileInput = document.getElementById('movFileInput');
+        if (movFileInput) {
+            movFileInput.addEventListener('change', (e) => handleFileRead(e, 'movDataInput', 'movFileStatus'));
+        }
 
         document.getElementById('movSuccessHomeBtn')?.addEventListener('click', () => GG.showView('homeView'));
         document.getElementById('movSuccessAgainBtn')?.addEventListener('click', resetMovView);
@@ -341,10 +393,20 @@ window.GG = {};
     function resetMovView() {
         document.getElementById('movUploaderForm').style.display = 'block';
         document.getElementById('movSuccessScreen').style.display = 'none';
-        document.getElementById('movDataInput').value = '';
+        
+        const dataInput = document.getElementById('movDataInput');
+        if (dataInput) dataInput.value = '';
+        
         document.getElementById('movPreviewSection').classList.add('hidden');
         document.getElementById('movInsertStatus').textContent = '';
         globalMovRowsToInsert = [];
+
+        // Reseta aba para 'Colar'
+        document.getElementById('movPasteTab')?.click();
+        const fInput = document.getElementById('movFileInput');
+        if(fInput) fInput.value = '';
+        const fStatus = document.getElementById('movFileStatus');
+        if(fStatus) fStatus.textContent = '';
     }
 
     function handleProcessMovimentacao() {
@@ -352,7 +414,7 @@ window.GG = {};
         const previewSummary = document.getElementById('movPreviewSummary');
 
         if (!rawData) {
-            previewSummary.textContent = 'Cole os dados primeiro.';
+            previewSummary.textContent = 'Cole os dados primeiro ou importe um arquivo.';
             return;
         }
 
@@ -389,17 +451,7 @@ window.GG = {};
     async function handleInsertMovimentacao() {
         const statusEl = document.getElementById('movInsertStatus');
         
-        // --- LÓGICA DE MÚLTIPLAS BASES ---
-        const checkPrincipal = document.getElementById('checkMovPrincipal');
-        const checkSecundaria = document.getElementById('checkMovSecundaria');
-        
         if (globalMovRowsToInsert.length === 0) return;
-
-        // Validação
-        if (!checkPrincipal.checked && !checkSecundaria.checked) {
-            alert('Por favor, selecione pelo menos uma base para atualizar.');
-            return;
-        }
 
         const CHUNK_SIZE = 500;
         const totalLotes = Math.ceil(globalMovRowsToInsert.length / CHUNK_SIZE);
@@ -410,28 +462,11 @@ window.GG = {};
                 const loteAtual = (i / CHUNK_SIZE) + 1;
 
                 GG.showLoading(true, `Enviando lote ${loteAtual} de ${totalLotes}...`);
-                statusEl.textContent = `Enviando lote ${loteAtual} para as bases selecionadas...`;
+                statusEl.textContent = `Enviando lote ${loteAtual} para o banco...`;
 
-                const promises = [];
-
-                // 1. Tabela Principal (movimentacao)
-                if (checkPrincipal.checked) {
-                    promises.push(supabase.from('movimentacao').insert(chunk));
-                }
-
-                // 2. Tabela Secundária (Ex: movimentacao_2)
-                // JP: Ajuste o nome da tabela 'movimentacao_2' conforme seu banco
-                if (checkSecundaria.checked) {
-                    promises.push(supabase.from('movimentacao_2').insert(chunk));
-                }
-
-                // Executa em paralelo
-                const results = await Promise.all(promises);
-
-                // Verifica erros em qualquer uma das chamadas
-                for (const res of results) {
-                    if (res.error) throw new Error(res.error.message);
-                }
+                // Inserção simples na tabela principal
+                const { error } = await supabase.from('movimentacao').insert(chunk);
+                if (error) throw new Error(error.message);
             }
 
             // Sucesso
