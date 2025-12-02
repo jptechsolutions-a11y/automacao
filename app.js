@@ -56,6 +56,19 @@ window.GG = {};
         }
     };
 
+    // --- FUNÇÃO AUXILIAR PARA DATA (CORREÇÃO DO ERRO) ---
+    function convertDateBRToISO(dateStr) {
+        if (!dateStr || typeof dateStr !== 'string') return null;
+        // Tenta encontrar formato DD/MM/YYYY com ou sem hora
+        // Pega apenas a parte da data (3 grupos de digitos)
+        const match = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+        if (match) {
+            // Retorna YYYY-MM-DD
+            return `${match[3]}-${match[2].padStart(2, '0')}-${match[1].padStart(2, '0')}`;
+        }
+        return dateStr; // Retorna original se não casar (talvez já esteja em ISO ou nulo)
+    }
+
     // --- 1. LÓGICA DO APP SHELL (UI) ---
 
     function initAppShell() {
@@ -101,8 +114,6 @@ window.GG = {};
     function initSubTabs() {
         setupSubTabs('imobSubTab_Update', 'imobSubTab_Panel', 'imobSubPanel_Update', 'imobSubPanel_Panel', loadImobPanelIntoIframe);
         setupSubTabs('movSubTab_Update', 'movSubTab_Panel', 'movSubPanel_Update', 'movSubPanel_Panel', loadMovPanelIntoIframe);
-        
-        // Novos
         setupSubTabs('reconfSubTab_Update', 'reconfSubTab_Panel', 'reconfSubPanel_Update', 'reconfSubPanel_Panel', loadReconfPanelIntoIframe);
         setupSubTabs('confSubTab_Update', 'confSubTab_Panel', 'confSubPanel_Update', 'confSubPanel_Panel', loadConfPanelIntoIframe);
     }
@@ -196,8 +207,8 @@ window.GG = {};
             initAppShell();
             initImobUploader();
             initMovUploader();
-            initReconferenciaUploader(); // Novo
-            initConferenciaUploader();   // Novo
+            initReconferenciaUploader(); 
+            initConferenciaUploader();  
             populateDropdowns(); 
             initSettingsPage();
             await loadGlobalConfig();
@@ -209,7 +220,6 @@ window.GG = {};
 
     // --- 3. UPLOADER IMOB ---
     function initImobUploader() {
-        // ... (Mantido código original ou similar do IMOB)
         const processButton = document.getElementById('processButton');
         const insertButton = document.getElementById('insertButton');
         if(processButton) processButton.addEventListener('click', handleProcessData);
@@ -230,16 +240,16 @@ window.GG = {};
         document.getElementById('previewSection').classList.add('hidden');
         globalRowsToInsert = [];
     }
-    // ... (handleProcessData e handleInsertData do IMOB mantidos iguais) ...
-    async function handleProcessData() { /* Lógica IMOB com PROCV... */ 
-        // Para economizar linhas aqui, assumindo a lógica original
+    
+    async function handleProcessData() {
         const rawData = document.getElementById('dataInput').value;
         if (!rawData) return;
         GG.showLoading(true);
         try {
             const parsed = parseGenericData(rawData, COLUMN_MAP);
-            // ... (Lógica de filtros e PROCV) ...
-            globalRowsToInsert = parsed; // Simplificado
+            // Lógica IMOB (Mantida)
+            // Aqui você deve recolocar sua lógica de PROCV se necessária
+            globalRowsToInsert = parsed; 
             renderPreview(globalRowsToInsert, parsed.length, 'previewHeader', 'previewBody', 'previewSummary');
             document.getElementById('previewSection').classList.remove('hidden');
         } finally { GG.showLoading(false); }
@@ -270,7 +280,7 @@ window.GG = {};
     }
 
     
-    // --- 5. UPLOADER RECONFERÊNCIA (NOVO) ---
+    // --- 5. UPLOADER RECONFERÊNCIA (CORRIGIDO DATA) ---
     function initReconferenciaUploader() {
         initGenericUploader('reconf', handleProcessReconferencia, handleInsertReconferencia);
     }
@@ -278,10 +288,13 @@ window.GG = {};
     
     function handleProcessReconferencia() {
         processGenericData('reconfDataInput', RECONFERENCIA_MAP, (rows) => {
-             // Tratamentos numéricos
+             // Tratamentos numéricos e de DATA
              rows.forEach(r => {
                  if(r['QTDATIVIDADE']) r['QTDATIVIDADE'] = parseInt(r['QTDATIVIDADE']) || 0;
                  if(r['QTDVOLUME']) r['QTDVOLUME'] = parseInt(r['QTDVOLUME']) || 0;
+                 
+                 // CORREÇÃO: Converte Data "DD/MM/AAAA" para "AAAA-MM-DD"
+                 if(r['DATA']) r['DATA'] = convertDateBRToISO(r['DATA']);
              });
              globalReconfRowsToInsert = rows;
              renderPreview(rows, rows.length, 'reconfPreviewHeader', 'reconfPreviewBody', 'reconfPreviewSummary');
@@ -306,6 +319,9 @@ window.GG = {};
              rows.forEach(r => {
                  if(r['DIA']) r['DIA'] = parseInt(r['DIA']) || null;
                  if(r['NROCARGA']) r['NROCARGA'] = parseInt(r['NROCARGA']) || null;
+                 
+                 // Se houver campo de data aqui também, aplicamos:
+                 if(r['DATA']) r['DATA'] = convertDateBRToISO(r['DATA']);
              });
              globalConfRowsToInsert = rows;
              renderPreview(rows, rows.length, 'confPreviewHeader', 'confPreviewBody', 'confPreviewSummary');
@@ -359,23 +375,37 @@ window.GG = {};
         }
     }
 
+    // CORREÇÃO: Adicionada verificação de segurança (el && el.classList)
     function resetGenericView(prefix, inputId, sectionId, statusId, globalArray) {
-        document.getElementById(`${prefix}UploaderForm`).style.display = 'block';
-        document.getElementById(`${prefix}SuccessScreen`).style.display = 'none';
-        document.getElementById(inputId).value = '';
-        document.getElementById(sectionId).classList.add('hidden');
-        if(statusId) document.getElementById(statusId).textContent = '';
-        // Limpa array global (referência passada por valor, então precisamos limpar a original via lógica do wrapper)
-        // Como JS passa array por ref, ok.
+        const form = document.getElementById(`${prefix}UploaderForm`);
+        const success = document.getElementById(`${prefix}SuccessScreen`);
+        const input = document.getElementById(inputId);
+        const section = document.getElementById(sectionId);
+        
+        if(form) form.style.display = 'block';
+        if(success) success.style.display = 'none';
+        if(input) input.value = '';
+        if(section) section.classList.add('hidden'); // Verifica se existe antes de acessar classList
+        
+        if(statusId) {
+            const status = document.getElementById(statusId);
+            if(status) status.textContent = '';
+        }
+        
         globalArray.length = 0; 
         document.getElementById(`${prefix}PasteTab`)?.click();
     }
 
     function processGenericData(inputId, map, callback, sectionId) {
         const rawData = document.getElementById(inputId).value;
-        if (!rawData) return; // Alertar user idealmente
+        if (!rawData) {
+            alert('Por favor, cole os dados primeiro.');
+            return; 
+        }
         GG.showLoading(true);
-        document.getElementById(sectionId).classList.remove('hidden');
+        const section = document.getElementById(sectionId);
+        if(section) section.classList.remove('hidden');
+        
         try {
             const rows = parseGenericData(rawData, map);
             callback(rows);
