@@ -12,7 +12,7 @@ window.GG = {};
     let supabase = null;
     let globalRowsToInsert = [];
     let globalMovRowsToInsert = []; 
-    let globalSepRowsToInsert = []; // Novo (Separação)
+    let globalSepRowsToInsert = [];
     let globalReconfRowsToInsert = [];
     let globalConfRowsToInsert = [];   
     let globalPanelConfig = new Map();
@@ -32,7 +32,7 @@ window.GG = {};
         'DTAHORINITAREFA', 'DTAHORFIMTAREFA', 'CODPRODUTIVO', 'PRODUTIVO', 'USUARIO_GER'
     ];
 
-    // 3. SEPARAÇÃO (Novo)
+    // 3. SEPARAÇÃO
     const SEPARACAO_MAP = [
         'NROEMPRESA', 'CODPRODUTIVO', 'PRODUTIVO', 'CODRH', 'CODEQUIPE', 'EQUIPE', 
         'QTDITEM', 'QTDVOLUME', 'DTAINICIO', 'Hora Inicio', 'DTA Fim', 'HORAFIM', 
@@ -65,7 +65,8 @@ window.GG = {};
         }
     };
 
-    // --- FUNÇÃO AUXILIAR PARA DATA ---
+    // --- FUNÇÕES AUXILIARES DE FORMATAÇÃO ---
+
     function convertDateBRToISO(dateStr) {
         if (!dateStr || typeof dateStr !== 'string') return null;
         const match = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
@@ -73,6 +74,32 @@ window.GG = {};
             return `${match[3]}-${match[2].padStart(2, '0')}-${match[1].padStart(2, '0')}`;
         }
         return dateStr; 
+    }
+
+    /**
+     * Converte strings numéricas brasileiras (ex: "2,5") para float padrão (2.5)
+     * Remove pontos de milhar se houver, e troca vírgula por ponto.
+     */
+    function parsePtBrFloat(val) {
+        if (!val && val !== 0) return null;
+        if (typeof val === 'number') return val;
+        
+        let str = String(val).trim();
+        if (str === '') return null;
+
+        // Se tiver apenas vírgula como separador (ex: "2,5" ou "1000,50")
+        // Substitui vírgula por ponto.
+        // Nota: Se o sistema exporta "1.000,00", precisamos remover o ponto antes.
+        // Assumindo formato simples sem milhar ou com ponto para milhar:
+        
+        // Remove pontos (milhar)
+        // str = str.replace(/\./g, ''); 
+        // Acima é arriscado se o input for "2.5". Vamos assumir troca simples de , para .
+        
+        str = str.replace(',', '.');
+        
+        const num = parseFloat(str);
+        return isNaN(num) ? null : num;
     }
 
     // --- 1. LÓGICA DO APP SHELL (UI) ---
@@ -120,7 +147,7 @@ window.GG = {};
     function initSubTabs() {
         setupSubTabs('imobSubTab_Update', 'imobSubTab_Panel', 'imobSubPanel_Update', 'imobSubPanel_Panel', loadImobPanelIntoIframe);
         setupSubTabs('movSubTab_Update', 'movSubTab_Panel', 'movSubPanel_Update', 'movSubPanel_Panel', loadMovPanelIntoIframe);
-        setupSubTabs('sepSubTab_Update', 'sepSubTab_Panel', 'sepSubPanel_Update', 'sepSubPanel_Panel', loadSepPanelIntoIframe); // Novo
+        setupSubTabs('sepSubTab_Update', 'sepSubTab_Panel', 'sepSubPanel_Update', 'sepSubPanel_Panel', loadSepPanelIntoIframe); 
         setupSubTabs('reconfSubTab_Update', 'reconfSubTab_Panel', 'reconfSubPanel_Update', 'reconfSubPanel_Panel', loadReconfPanelIntoIframe);
         setupSubTabs('confSubTab_Update', 'confSubTab_Panel', 'confSubPanel_Update', 'confSubPanel_Panel', loadConfPanelIntoIframe);
     }
@@ -179,7 +206,7 @@ window.GG = {};
         // Resets
         if (viewId !== 'imobView') resetImobView();
         if (viewId !== 'movimentacaoView') resetMovView();
-        if (viewId !== 'separacaoView') resetSepView(); // Novo
+        if (viewId !== 'separacaoView') resetSepView();
         if (viewId !== 'reconferenciaView') resetReconfView();
         if (viewId !== 'conferenciaView') resetConfView();
     };
@@ -218,7 +245,7 @@ window.GG = {};
             initAppShell();
             initImobUploader();
             initMovUploader();
-            initSeparacaoUploader(); // Novo
+            initSeparacaoUploader();
             initReconferenciaUploader(); 
             initConferenciaUploader();  
             populateDropdowns(); 
@@ -274,21 +301,30 @@ window.GG = {};
         initGenericUploader('mov', handleProcessMovimentacao, handleInsertMovimentacao);
     }
     function resetMovView() { resetGenericView('mov', 'movDataInput', 'movPreviewSection', 'movInsertStatus', globalMovRowsToInsert); }
+    
     function handleProcessMovimentacao() {
         processGenericData('movDataInput', MOVIMENTACAO_MAP, (rows) => {
             rows.forEach(row => {
-               if (row['QTDE']) row['QTDE'] = parseFloat(row['QTDE']) || 0;
+               // Converte campos numéricos que podem vir com vírgula (ex: "2,5")
+               row['QTDE'] = parsePtBrFloat(row['QTDE']);
+               row['EMBALAGEM'] = parsePtBrFloat(row['EMBALAGEM']);
+               
+               // Opcional: Garantir que BigInts vazios virem null
+               if (row['SEQPRODUTO'] === '') row['SEQPRODUTO'] = null;
+               if (row['NROEMPRESA'] === '') row['NROEMPRESA'] = null;
             });
+            
             globalMovRowsToInsert = rows;
             renderPreview(rows, rows.length, 'movPreviewHeader', 'movPreviewBody', 'movPreviewSummary');
             document.getElementById('movInsertButton').disabled = false;
         }, 'movPreviewSection');
     }
+    
     async function handleInsertMovimentacao() {
         insertBatch('movimentacao', globalMovRowsToInsert, 'movUploaderForm', 'movSuccessScreen', 'movInsertStatus');
     }
 
-    // --- 5. UPLOADER SEPARAÇÃO (NOVO) ---
+    // --- 5. UPLOADER SEPARAÇÃO ---
     function initSeparacaoUploader() {
         initGenericUploader('sep', handleProcessSeparacao, handleInsertSeparacao);
     }
@@ -296,9 +332,7 @@ window.GG = {};
     
     function handleProcessSeparacao() {
         processGenericData('sepDataInput', SEPARACAO_MAP, (rows) => {
-            // Conversão de Tipos baseada no CREATE TABLE
             rows.forEach(r => {
-                // Campos BigInt
                 if(r['NROEMPRESA']) r['NROEMPRESA'] = parseInt(r['NROEMPRESA']) || null;
                 if(r['CODPRODUTIVO']) r['CODPRODUTIVO'] = parseInt(r['CODPRODUTIVO']) || null;
                 if(r['CODEQUIPE']) r['CODEQUIPE'] = parseInt(r['CODEQUIPE']) || null;
@@ -308,8 +342,9 @@ window.GG = {};
                 if(r['QTD_VISITAS']) r['QTD_VISITAS'] = parseInt(r['QTD_VISITAS']) || null;
                 if(r['QTD_SEPARADA']) r['QTD_SEPARADA'] = parseInt(r['QTD_SEPARADA']) || null;
                 
-                // Campos Text, mas que a view usa como numérico (opcional limpar, mas raw é mais seguro)
-                // QTDVOLUME é text no banco, mas usado como numeric na view.
+                // Tratamento de decimais na Separação também
+                if(r['PESO']) r['PESO'] = parsePtBrFloat(r['PESO']);
+                if(r['METRAGEMCUBICA']) r['METRAGEMCUBICA'] = parsePtBrFloat(r['METRAGEMCUBICA']);
             });
             globalSepRowsToInsert = rows;
             renderPreview(rows, rows.length, 'sepPreviewHeader', 'sepPreviewBody', 'sepPreviewSummary');
@@ -334,6 +369,10 @@ window.GG = {};
                  if(r['QTDATIVIDADE']) r['QTDATIVIDADE'] = parseInt(r['QTDATIVIDADE']) || 0;
                  if(r['QTDVOLUME']) r['QTDVOLUME'] = parseInt(r['QTDVOLUME']) || 0;
                  if(r['DATA']) r['DATA'] = convertDateBRToISO(r['DATA']);
+
+                 // Decimais Reconferência
+                 if(r['PESO']) r['PESO'] = parsePtBrFloat(r['PESO']);
+                 if(r['METRAGEMCUBICA']) r['METRAGEMCUBICA'] = parsePtBrFloat(r['METRAGEMCUBICA']);
              });
              globalReconfRowsToInsert = rows;
              renderPreview(rows, rows.length, 'reconfPreviewHeader', 'reconfPreviewBody', 'reconfPreviewSummary');
@@ -456,8 +495,15 @@ window.GG = {};
         try {
             for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
                 const chunk = rows.slice(i, i + CHUNK_SIZE);
-                GG.showLoading(true, `Enviando lote...`);
-                if(statusEl) statusEl.textContent = `Enviando ${i + chunk.length}/${rows.length}...`;
+                
+                const currentCount = Math.min(i + CHUNK_SIZE, rows.length);
+                const msg = `Enviando linhas ${i + 1} a ${currentCount} de ${rows.length}...`;
+                
+                // Atualiza o Loading Screen
+                GG.showLoading(true, msg);
+                
+                // Atualiza o texto abaixo do botão (se existir)
+                if(statusEl) statusEl.textContent = msg;
                 
                 const { error } = await supabase.from(table).insert(chunk);
                 if (error) throw error;
@@ -534,7 +580,7 @@ window.GG = {};
 
     function loadImobPanelIntoIframe() { loadPanelGeneric('imob', 'imobLookerIframe'); }
     function loadMovPanelIntoIframe() { loadPanelGeneric('movimentacao', 'movLookerIframe'); }
-    function loadSepPanelIntoIframe() { loadPanelGeneric('separacao', 'sepLookerIframe'); } // Novo
+    function loadSepPanelIntoIframe() { loadPanelGeneric('separacao', 'sepLookerIframe'); }
     function loadReconfPanelIntoIframe() { loadPanelGeneric('reconferencia', 'reconfLookerIframe'); }
     function loadConfPanelIntoIframe() { loadPanelGeneric('conferencia', 'confLookerIframe'); }
 
@@ -563,7 +609,7 @@ window.GG = {};
     async function handleSaveSettings() {
         const imob = document.getElementById('settingLinkImob').value;
         const mov = document.getElementById('settingLinkMov').value;
-        const sep = document.getElementById('settingLinkSeparacao').value; // Novo
+        const sep = document.getElementById('settingLinkSeparacao').value; 
         const reconf = document.getElementById('settingLinkReconf').value;
         const conf = document.getElementById('settingLinkConf').value;
         const vendas = document.getElementById('settingLinkVendas').value;
@@ -572,7 +618,7 @@ window.GG = {};
         const updates = [
             { painel_key: 'imob', embed_url: imob, display_name: 'Painel IMOB' },
             { painel_key: 'movimentacao', embed_url: mov, display_name: 'Painel Movimentação' },
-            { painel_key: 'separacao', embed_url: sep, display_name: 'Painel Separação' }, // Novo
+            { painel_key: 'separacao', embed_url: sep, display_name: 'Painel Separação' }, 
             { painel_key: 'reconferencia', embed_url: reconf, display_name: 'Painel Reconferência' },
             { painel_key: 'conferencia', embed_url: conf, display_name: 'Painel Conferência' },
             { painel_key: 'vendas', embed_url: vendas, display_name: 'Painel Vendas' }
