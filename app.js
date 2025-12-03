@@ -12,8 +12,9 @@ window.GG = {};
     let supabase = null;
     let globalRowsToInsert = [];
     let globalMovRowsToInsert = []; 
-    let globalReconfRowsToInsert = []; // Novo
-    let globalConfRowsToInsert = [];   // Novo
+    let globalSepRowsToInsert = []; // Novo (Separação)
+    let globalReconfRowsToInsert = [];
+    let globalConfRowsToInsert = [];   
     let globalPanelConfig = new Map();
 
     // --- MAPAS DE COLUNAS ---
@@ -31,14 +32,22 @@ window.GG = {};
         'DTAHORINITAREFA', 'DTAHORFIMTAREFA', 'CODPRODUTIVO', 'PRODUTIVO', 'USUARIO_GER'
     ];
 
-    // 3. RECONFERÊNCIA (Novo)
+    // 3. SEPARAÇÃO (Novo)
+    const SEPARACAO_MAP = [
+        'NROEMPRESA', 'CODPRODUTIVO', 'PRODUTIVO', 'CODRH', 'CODEQUIPE', 'EQUIPE', 
+        'QTDITEM', 'QTDVOLUME', 'DTAINICIO', 'Hora Inicio', 'DTA Fim', 'HORAFIM', 
+        'NROCARGA', 'SEQLOTE', 'PESO', 'METRAGEMCUBICA', 'Distribuição', 'LINHA_SEPARACAO', 
+        'QTD_VISITAS', 'QTD_SEPARADA', 'QTD_CANCELADA', 'PERC_SEPARADA', 'ATIVIDADE'
+    ];
+
+    // 4. RECONFERÊNCIA
     const RECONFERENCIA_MAP = [
         'NROEMPRESA', 'EQUIPE', 'NOMEREDUZ', 'DATA', 'SEQTAREFA', 'QTDATIVIDADE', 'PESO',
         'METRAGEMCUBICA', 'QTDVOLUME', 'QTDITEM', 'ATIVIDADE', 'HORA_INICIO', 'HORA_FIM',
         'TIPO_MOV', 'SEQPRODUTO', 'DESCCOMPLETA', 'SEQPALETERF', 'NROCARGA', 'CARGA_MV'
     ];
 
-    // 4. CONFERÊNCIA (Novo)
+    // 5. CONFERÊNCIA
     const CONFERENCIA_MAP = [
         'NROEMPRESA', 'DATA', 'HORA', 'MES_ANO', 'DIA', 'NROCARGA', 'SEQPALETERF',
         'SEQPRODUTO', 'DESCCOMPLETA', 'CATEGORIA_1', 'NORMA_PULMAO', 'PALETIZACAO',
@@ -56,17 +65,14 @@ window.GG = {};
         }
     };
 
-    // --- FUNÇÃO AUXILIAR PARA DATA (CORREÇÃO DO ERRO) ---
+    // --- FUNÇÃO AUXILIAR PARA DATA ---
     function convertDateBRToISO(dateStr) {
         if (!dateStr || typeof dateStr !== 'string') return null;
-        // Tenta encontrar formato DD/MM/YYYY com ou sem hora
-        // Pega apenas a parte da data (3 grupos de digitos)
         const match = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
         if (match) {
-            // Retorna YYYY-MM-DD
             return `${match[3]}-${match[2].padStart(2, '0')}-${match[1].padStart(2, '0')}`;
         }
-        return dateStr; // Retorna original se não casar (talvez já esteja em ISO ou nulo)
+        return dateStr; 
     }
 
     // --- 1. LÓGICA DO APP SHELL (UI) ---
@@ -114,6 +120,7 @@ window.GG = {};
     function initSubTabs() {
         setupSubTabs('imobSubTab_Update', 'imobSubTab_Panel', 'imobSubPanel_Update', 'imobSubPanel_Panel', loadImobPanelIntoIframe);
         setupSubTabs('movSubTab_Update', 'movSubTab_Panel', 'movSubPanel_Update', 'movSubPanel_Panel', loadMovPanelIntoIframe);
+        setupSubTabs('sepSubTab_Update', 'sepSubTab_Panel', 'sepSubPanel_Update', 'sepSubPanel_Panel', loadSepPanelIntoIframe); // Novo
         setupSubTabs('reconfSubTab_Update', 'reconfSubTab_Panel', 'reconfSubPanel_Update', 'reconfSubPanel_Panel', loadReconfPanelIntoIframe);
         setupSubTabs('confSubTab_Update', 'confSubTab_Panel', 'confSubPanel_Update', 'confSubPanel_Panel', loadConfPanelIntoIframe);
     }
@@ -157,11 +164,14 @@ window.GG = {};
 
         // Populate Configs
         if (viewId === 'settingsView') {
-            ['imob', 'movimentacao', 'reconferencia', 'conferencia', 'vendas'].forEach(key => {
-                const el = document.getElementById(key === 'movimentacao' ? 'settingLinkMov' : 
-                                                 key === 'reconferencia' ? 'settingLinkReconf' :
-                                                 key === 'conferencia' ? 'settingLinkConf' : 
-                                                 `settingLink${key.charAt(0).toUpperCase() + key.slice(1)}`);
+            ['imob', 'movimentacao', 'separacao', 'reconferencia', 'conferencia', 'vendas'].forEach(key => {
+                const el = document.getElementById(
+                    key === 'movimentacao' ? 'settingLinkMov' : 
+                    key === 'separacao' ? 'settingLinkSeparacao' :
+                    key === 'reconferencia' ? 'settingLinkReconf' :
+                    key === 'conferencia' ? 'settingLinkConf' : 
+                    `settingLink${key.charAt(0).toUpperCase() + key.slice(1)}`
+                );
                 if(el && globalPanelConfig.has(key)) el.value = globalPanelConfig.get(key).embedUrl || '';
             });
         }
@@ -169,6 +179,7 @@ window.GG = {};
         // Resets
         if (viewId !== 'imobView') resetImobView();
         if (viewId !== 'movimentacaoView') resetMovView();
+        if (viewId !== 'separacaoView') resetSepView(); // Novo
         if (viewId !== 'reconferenciaView') resetReconfView();
         if (viewId !== 'conferenciaView') resetConfView();
     };
@@ -207,6 +218,7 @@ window.GG = {};
             initAppShell();
             initImobUploader();
             initMovUploader();
+            initSeparacaoUploader(); // Novo
             initReconferenciaUploader(); 
             initConferenciaUploader();  
             populateDropdowns(); 
@@ -247,8 +259,6 @@ window.GG = {};
         GG.showLoading(true);
         try {
             const parsed = parseGenericData(rawData, COLUMN_MAP);
-            // Lógica IMOB (Mantida)
-            // Aqui você deve recolocar sua lógica de PROCV se necessária
             globalRowsToInsert = parsed; 
             renderPreview(globalRowsToInsert, parsed.length, 'previewHeader', 'previewBody', 'previewSummary');
             document.getElementById('previewSection').classList.remove('hidden');
@@ -266,7 +276,6 @@ window.GG = {};
     function resetMovView() { resetGenericView('mov', 'movDataInput', 'movPreviewSection', 'movInsertStatus', globalMovRowsToInsert); }
     function handleProcessMovimentacao() {
         processGenericData('movDataInput', MOVIMENTACAO_MAP, (rows) => {
-            // Tratamentos específicos
             rows.forEach(row => {
                if (row['QTDE']) row['QTDE'] = parseFloat(row['QTDE']) || 0;
             });
@@ -279,8 +288,41 @@ window.GG = {};
         insertBatch('movimentacao', globalMovRowsToInsert, 'movUploaderForm', 'movSuccessScreen', 'movInsertStatus');
     }
 
+    // --- 5. UPLOADER SEPARAÇÃO (NOVO) ---
+    function initSeparacaoUploader() {
+        initGenericUploader('sep', handleProcessSeparacao, handleInsertSeparacao);
+    }
+    function resetSepView() { resetGenericView('sep', 'sepDataInput', 'sepPreviewSection', 'sepInsertStatus', globalSepRowsToInsert); }
     
-    // --- 5. UPLOADER RECONFERÊNCIA (CORRIGIDO DATA) ---
+    function handleProcessSeparacao() {
+        processGenericData('sepDataInput', SEPARACAO_MAP, (rows) => {
+            // Conversão de Tipos baseada no CREATE TABLE
+            rows.forEach(r => {
+                // Campos BigInt
+                if(r['NROEMPRESA']) r['NROEMPRESA'] = parseInt(r['NROEMPRESA']) || null;
+                if(r['CODPRODUTIVO']) r['CODPRODUTIVO'] = parseInt(r['CODPRODUTIVO']) || null;
+                if(r['CODEQUIPE']) r['CODEQUIPE'] = parseInt(r['CODEQUIPE']) || null;
+                if(r['QTDITEM']) r['QTDITEM'] = parseInt(r['QTDITEM']) || null;
+                if(r['NROCARGA']) r['NROCARGA'] = parseInt(r['NROCARGA']) || null;
+                if(r['SEQLOTE']) r['SEQLOTE'] = parseInt(r['SEQLOTE']) || null;
+                if(r['QTD_VISITAS']) r['QTD_VISITAS'] = parseInt(r['QTD_VISITAS']) || null;
+                if(r['QTD_SEPARADA']) r['QTD_SEPARADA'] = parseInt(r['QTD_SEPARADA']) || null;
+                
+                // Campos Text, mas que a view usa como numérico (opcional limpar, mas raw é mais seguro)
+                // QTDVOLUME é text no banco, mas usado como numeric na view.
+            });
+            globalSepRowsToInsert = rows;
+            renderPreview(rows, rows.length, 'sepPreviewHeader', 'sepPreviewBody', 'sepPreviewSummary');
+            document.getElementById('sepInsertButton').disabled = false;
+        }, 'sepPreviewSection');
+    }
+
+    async function handleInsertSeparacao() {
+        insertBatch('separacao', globalSepRowsToInsert, 'sepUploaderForm', 'sepSuccessScreen', 'sepInsertStatus');
+    }
+
+    
+    // --- 6. UPLOADER RECONFERÊNCIA ---
     function initReconferenciaUploader() {
         initGenericUploader('reconf', handleProcessReconferencia, handleInsertReconferencia);
     }
@@ -288,12 +330,9 @@ window.GG = {};
     
     function handleProcessReconferencia() {
         processGenericData('reconfDataInput', RECONFERENCIA_MAP, (rows) => {
-             // Tratamentos numéricos e de DATA
              rows.forEach(r => {
                  if(r['QTDATIVIDADE']) r['QTDATIVIDADE'] = parseInt(r['QTDATIVIDADE']) || 0;
                  if(r['QTDVOLUME']) r['QTDVOLUME'] = parseInt(r['QTDVOLUME']) || 0;
-                 
-                 // CORREÇÃO: Converte Data "DD/MM/AAAA" para "AAAA-MM-DD"
                  if(r['DATA']) r['DATA'] = convertDateBRToISO(r['DATA']);
              });
              globalReconfRowsToInsert = rows;
@@ -307,7 +346,7 @@ window.GG = {};
     }
 
 
-    // --- 6. UPLOADER CONFERÊNCIA (NOVO) ---
+    // --- 7. UPLOADER CONFERÊNCIA ---
     function initConferenciaUploader() {
         initGenericUploader('conf', handleProcessConferencia, handleInsertConferencia);
     }
@@ -315,12 +354,9 @@ window.GG = {};
     
     function handleProcessConferencia() {
         processGenericData('confDataInput', CONFERENCIA_MAP, (rows) => {
-             // Tratamentos
              rows.forEach(r => {
                  if(r['DIA']) r['DIA'] = parseInt(r['DIA']) || null;
                  if(r['NROCARGA']) r['NROCARGA'] = parseInt(r['NROCARGA']) || null;
-                 
-                 // Se houver campo de data aqui também, aplicamos:
                  if(r['DATA']) r['DATA'] = convertDateBRToISO(r['DATA']);
              });
              globalConfRowsToInsert = rows;
@@ -337,7 +373,6 @@ window.GG = {};
     // --- HELPERS GENÉRICOS ---
 
     function initGenericUploader(prefix, processFn, insertFn) {
-        // Injeção de UI foi movida para o HTML para simplificar
         const btnProcess = document.getElementById(`${prefix}ProcessButton`);
         const btnInsert = document.getElementById(`${prefix}InsertButton`);
         
@@ -352,6 +387,7 @@ window.GG = {};
         document.getElementById(`${prefix}SuccessHomeBtn`)?.addEventListener('click', () => GG.showView('homeView'));
         document.getElementById(`${prefix}SuccessAgainBtn`)?.addEventListener('click', () => {
              if(prefix === 'mov') resetMovView();
+             if(prefix === 'sep') resetSepView();
              if(prefix === 'reconf') resetReconfView();
              if(prefix === 'conf') resetConfView();
         });
@@ -375,7 +411,6 @@ window.GG = {};
         }
     }
 
-    // CORREÇÃO: Adicionada verificação de segurança (el && el.classList)
     function resetGenericView(prefix, inputId, sectionId, statusId, globalArray) {
         const form = document.getElementById(`${prefix}UploaderForm`);
         const success = document.getElementById(`${prefix}SuccessScreen`);
@@ -385,7 +420,7 @@ window.GG = {};
         if(form) form.style.display = 'block';
         if(success) success.style.display = 'none';
         if(input) input.value = '';
-        if(section) section.classList.add('hidden'); // Verifica se existe antes de acessar classList
+        if(section) section.classList.add('hidden'); 
         
         if(statusId) {
             const status = document.getElementById(statusId);
@@ -499,6 +534,7 @@ window.GG = {};
 
     function loadImobPanelIntoIframe() { loadPanelGeneric('imob', 'imobLookerIframe'); }
     function loadMovPanelIntoIframe() { loadPanelGeneric('movimentacao', 'movLookerIframe'); }
+    function loadSepPanelIntoIframe() { loadPanelGeneric('separacao', 'sepLookerIframe'); } // Novo
     function loadReconfPanelIntoIframe() { loadPanelGeneric('reconferencia', 'reconfLookerIframe'); }
     function loadConfPanelIntoIframe() { loadPanelGeneric('conferencia', 'confLookerIframe'); }
 
@@ -527,6 +563,7 @@ window.GG = {};
     async function handleSaveSettings() {
         const imob = document.getElementById('settingLinkImob').value;
         const mov = document.getElementById('settingLinkMov').value;
+        const sep = document.getElementById('settingLinkSeparacao').value; // Novo
         const reconf = document.getElementById('settingLinkReconf').value;
         const conf = document.getElementById('settingLinkConf').value;
         const vendas = document.getElementById('settingLinkVendas').value;
@@ -535,6 +572,7 @@ window.GG = {};
         const updates = [
             { painel_key: 'imob', embed_url: imob, display_name: 'Painel IMOB' },
             { painel_key: 'movimentacao', embed_url: mov, display_name: 'Painel Movimentação' },
+            { painel_key: 'separacao', embed_url: sep, display_name: 'Painel Separação' }, // Novo
             { painel_key: 'reconferencia', embed_url: reconf, display_name: 'Painel Reconferência' },
             { painel_key: 'conferencia', embed_url: conf, display_name: 'Painel Conferência' },
             { painel_key: 'vendas', embed_url: vendas, display_name: 'Painel Vendas' }
