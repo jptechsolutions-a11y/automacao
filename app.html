@@ -5,89 +5,83 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- ATUALIZADO: Título da Página -->
     <title>Atualização de Painéis - B.I.</title>
-    <!-- Favicon e Meta (do seu modelo) -->
+    <!-- Favicon e Meta -->
     <link rel="icon" href="fav.png" type="image/png"> 
     <meta name="theme-color" content="#011627">
     
-    <!-- CSS (Novo arquivo) -->
+    <!-- CSS -->
     <link rel="stylesheet" href="style.css">
     
-    <!-- Tailwind (Apenas para utilitários, já que style.css é o principal) -->
+    <!-- Tailwind (Utilitários) -->
     <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- Libs (do seu modelo) -->
+    <!-- Libs -->
     <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-    <!-- ====================================================== -->
-    <!-- <<< ESTILO ADICIONADO PARA O IFRAME DO LOOKER >>> -->
-    <!-- ====================================================== -->
     <style>
         .looker-iframe {
             width: 100%;
             height: 100%;
-            min-height: 80vh; /* Garante uma altura mínima */
+            min-height: 80vh; 
         }
 
-        /* --- Estilos das Sub-Abas (NOVO) --- */
+        /* --- Estilos das Sub-Abas --- */
         .imob-sub-nav {
             display: flex;
-            border-bottom: 2px solid #e5e7eb; /* gray-200 */
+            border-bottom: 2px solid #e5e7eb; 
         }
         .imob-sub-btn {
             display: inline-flex;
             align-items: center;
-            padding: 0.75rem 1rem; /* 12px 16px */
+            padding: 0.75rem 1rem; 
             font-size: 0.95rem;
             font-weight: 600;
             border: none;
             background: none;
             cursor: pointer;
-            color: #6b7280; /* gray-500 */
+            color: #6b7280; 
             border-bottom: 3px solid transparent;
-            transform: translateY(2px); /* Alinha com a borda inferior */
+            transform: translateY(2px); 
             transition: all 0.2s ease;
         }
         .imob-sub-btn:hover {
-            color: #1f2937; /* gray-800 */
-            background-color: #f9fafb; /* gray-50 */
+            color: #1f2937; 
+            background-color: #f9fafb; 
         }
         .imob-sub-btn.active {
-            color: var(--accent); /* Cor principal do app */
+            color: var(--accent); 
             border-bottom-color: var(--accent);
         }
         .imob-sub-panel {
-            display: none; /* Escondido por padrão */
+            display: none; 
         }
         .imob-sub-panel.active {
-            display: block; /* Visível */
-            animation: fadeIn 0.4s ease-out; /* Reutiliza a animação existente */
+            display: block; 
+            animation: fadeIn 0.4s ease-out; 
         }
         /* Ajuste para o painel do Looker preencher a tela */
-        #imobSubPanel_Panel .info-card {
-            height: 100vh; /* Altura total da viewport */
-            max-height: calc(100vh - 200px); /* Ajuste para não estourar */
+        .looker-container {
+            height: 100vh; 
+            max-height: calc(100vh - 200px); 
         }
     </style>
-    <!-- ====================================================== -->
 
 </head>
 <body class="bg-gray-100">
 
     <div id="appShell" class="h-screen flex flex-col">
 
-        <!-- Barra do Topo (Baseada no seu modelo) -->
+        <!-- Barra do Topo -->
         <header id="topBar" class="flex-shrink-0">
             <div class="flex items-center gap-4">
                 <button id="sidebarToggle" class="btn-icon">
                     <i data-feather="menu" class="h-5 w-5"></i>
                 </button>
-                <!-- ATUALIZADO: Logo Placeholder -->
-                <img src="https://placehold.co/100x40/011627/FFF?text=Pain%C3%A9is" class="h-8 w-auto" alt="Logo Painéis"> <!-- Placeholder para seu icon.png -->
+                <img src="https://placehold.co/100x40/011627/FFF?text=Pain%C3%A9is" class="h-8 w-auto" alt="Logo Painéis"> 
                 <div class="separator"></div>
                 <div class="flex flex-col">
                     <span class="text-sm font-semibold text-white">Painel de B.I.</span>
-                    <!-- ATUALIZADO: Subtítulo -->
                     <span class="text-xs text-gray-400">Automação de B.I.</span>
                 </div>
             </div>
@@ -97,9 +91,9 @@
             </div>
             
             <div class="flex items-center gap-4">
-                <!-- <div class="separator"></div> -->
-                <!-- Ocultado o dropdown de perfil, pois não há login ainda -->
-                <!-- Você pode re-adicionar depois -->
+                 <button onclick="window.GG.logout()" class="btn-icon" title="Sair">
+                    <i data-feather="log-out" class="h-5 w-5"></i>
+                </button>
             </div>
         </header>
 
@@ -111,50 +105,55 @@
                     <a href="#home" class="nav-item" title="Home" onclick="window.GG.showView('homeView', this)">
                         <i data-feather="home" class="h-5 w-5 mr-3"></i> <span class="nav-text">Home</span>
                     </a>
+                    
+                    <div class="mt-4 border-t border-gray-700 pt-2">
+                        <span class="p-3 text-xs font-semibold text-gray-500 uppercase nav-text">Logística</span>
+                    </div>
+
                     <a href="#imob" class="nav-item" title="Upload Painel IMOB" onclick="window.GG.showView('imobView', this)">
                         <i data-feather="upload-cloud" class="h-5 w-5 mr-3"></i> <span class="nav-text">Upload IMOB</span>
                     </a>
-                    
-                    <!-- ====================================================== -->
-                    <!-- <<< ATUALIZAÇÃO: Link "Painel IMOB (Looker)" REMOVIDO daqui >>> -->
-                    <!-- ====================================================== -->
+
+                    <a href="#movimentacao" class="nav-item" title="Movimentação" onclick="window.GG.showView('movimentacaoView', this)">
+                        <i data-feather="activity" class="h-5 w-5 mr-3"></i> <span class="nav-text">Movimentação</span>
+                    </a>
+
+                    <!-- Separacao (NOVO) -->
+                    <a href="#separacao" class="nav-item" title="Separação" onclick="window.GG.showView('separacaoView', this)">
+                        <i data-feather="layers" class="h-5 w-5 mr-3"></i> <span class="nav-text">Separação</span>
+                    </a>
+
+                    <a href="#reconferencia" class="nav-item" title="Reconferência" onclick="window.GG.showView('reconferenciaView', this)">
+                        <i data-feather="check-square" class="h-5 w-5 mr-3"></i> <span class="nav-text">Reconferência</span>
+                    </a>
+
+                    <a href="#conferencia" class="nav-item" title="Conferência" onclick="window.GG.showView('conferenciaView', this)">
+                        <i data-feather="clipboard" class="h-5 w-5 mr-3"></i> <span class="nav-text">Conferência</span>
+                    </a>
                     
                     <div class="mt-4 border-t border-gray-700 pt-2">
-                        <span class="p-3 text-xs font-semibold text-gray-500 uppercase nav-text">Outros Painéis</span>
+                        <span class="p-3 text-xs font-semibold text-gray-500 uppercase nav-text">Comercial</span>
                     </div>
                     
-                    <a href="#" class="nav-item disabled" title="Em breve">
-                        <i data-feather="bar-chart-2" class="h-5 w-5 mr-3"></i> <span class="nav-text">Upload Vendas</span>
-                    </a>
-                    <!-- ====================================================== -->
-                    <!-- <<< ADICIONADO: Exemplo de futuro painel de vendas >>> -->
-                    <!-- ====================================================== -->
                     <a href="#lookerVendas" class="nav-item disabled" title="Em breve" onclick="window.GG.showView('lookerView', this, 'vendas')">
                         <i data-feather="dollar-sign" class="h-5 w-5 mr-3"></i> <span class="nav-text">Painel Vendas (Looker)</span>
                     </a>
-                    <!-- ====================================================== -->
                     
-                    <!-- ====================================================== -->
-                    <!-- <<< ATUALIZAÇÃO: Habilitando o link de Configurações >>> -->
-                    <!-- ====================================================== -->
-                    <a href="#settings" class="nav-item" title="Configurações" onclick="window.GG.showView('settingsView', this)">
-                        <i data-feather="settings" class="h-5 w-5 mr-3"></i> <span class="nav-text">Configurações</span>
-                    </a>
-                    <!-- ====================================================== -->
-                    
+                    <div class="mt-auto border-t border-gray-700 pt-2">
+                        <a href="#settings" class="nav-item" title="Configurações" onclick="window.GG.showView('settingsView', this)">
+                            <i data-feather="settings" class="h-5 w-5 mr-3"></i> <span class="nav-text">Configurações</span>
+                        </a>
+                    </div>
                 </nav>
             </aside>
             
             <div id="sidebarOverlay"></div>
 
-            <!-- Conteúdo Principal (onde as "views" são trocadas) -->
+            <!-- Conteúdo Principal -->
             <main class="main-content">
                 <div class="container mx-auto px-6 py-8">
 
-                    <!-- 
-                        View 1: Home (Nova) 
-                        Tela de seleção de painéis
-                    -->
+                    <!-- View 1: Home -->
                     <div id="homeView" class="view-content active">
                         <h1 class="text-2xl font-semibold text-gray-800 mb-6">Painéis de Atualização</h1>
                         
@@ -163,41 +162,73 @@
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            <!-- Card 1: Uploader IMOB (Ativo) -->
+                            <!-- Card IMOB -->
                             <div class="panel-card" onclick="window.GG.showView('imobView', document.querySelector('a[href=\'#imob\']'))">
                                 <div class="panel-icon bg-blue-100 text-blue-600">
                                     <i data-feather="upload-cloud"></i>
                                 </div>
-                                <h3 class="panel-title">Upload Painel IMOB</h3>
-                                <p class="panel-description">Atualizar a base de dados de movimentação (IMOB) colando dados do sistema.</p>
+                                <h3 class="panel-title">Painel IMOB</h3>
+                                <p class="panel-description">Atualizar base de movimentação imobiliária e estoque geral.</p>
                                 <span class="panel-status status-active">
                                     <i data-feather="check-circle" class="h-4 w-4"></i> Ativo
                                 </span>
                             </div>
 
-                            <!-- Card 2: Painel Vendas (Placeholder) -->
-                            <div class="panel-card disabled">
-                                <div class="panel-icon bg-gray-100 text-gray-400">
-                                    <i data-feather="bar-chart-2"></i>
+                            <!-- Card Movimentação -->
+                            <div class="panel-card" onclick="window.GG.showView('movimentacaoView', document.querySelector('a[href=\'#movimentacao\']'))">
+                                <div class="panel-icon bg-green-100 text-green-600">
+                                    <i data-feather="activity"></i>
                                 </div>
-                                <h3 class="panel-title">Painel Vendas</h3>
-                                <p class="panel-description">Atualizar relatórios de vendas consolidadas. (Em breve)</p>
-                                <span class="panel-status status-inactive">
-                                    <i data-feather="clock" class="h-4 w-4"></i> Em Criação
+                                <h3 class="panel-title">Movimentação</h3>
+                                <p class="panel-description">Atualizar status de atividades e produtividade.</p>
+                                <span class="panel-status status-active">
+                                    <i data-feather="check-circle" class="h-4 w-4"></i> Ativo
                                 </span>
                             </div>
 
-                            <!-- Card 3: Outro Painel (Placeholder) -->
-                            <!-- ====================================================== -->
-                            <!-- <<< ATUALIZAÇÃO: Card de Configurações agora é funcional >>> -->
-                            <!-- ====================================================== -->
+                            <!-- Card Separação (NOVO) -->
+                            <div class="panel-card" onclick="window.GG.showView('separacaoView', document.querySelector('a[href=\'#separacao\']'))">
+                                <div class="panel-icon bg-teal-100 text-teal-600">
+                                    <i data-feather="layers"></i>
+                                </div>
+                                <h3 class="panel-title">Separação</h3>
+                                <p class="panel-description">Produtividade de separação, cargas e lotes.</p>
+                                <span class="panel-status status-active">
+                                    <i data-feather="check-circle" class="h-4 w-4"></i> Ativo
+                                </span>
+                            </div>
+
+                            <!-- Card Reconferência -->
+                            <div class="panel-card" onclick="window.GG.showView('reconferenciaView', document.querySelector('a[href=\'#reconferencia\']'))">
+                                <div class="panel-icon bg-purple-100 text-purple-600">
+                                    <i data-feather="check-square"></i>
+                                </div>
+                                <h3 class="panel-title">Reconferência</h3>
+                                <p class="panel-description">Auditoria e reconferência de cargas.</p>
+                                <span class="panel-status status-active">
+                                    <i data-feather="check-circle" class="h-4 w-4"></i> Ativo
+                                </span>
+                            </div>
+
+                            <!-- Card Conferência -->
+                            <div class="panel-card" onclick="window.GG.showView('conferenciaView', document.querySelector('a[href=\'#conferencia\']'))">
+                                <div class="panel-icon bg-orange-100 text-orange-600">
+                                    <i data-feather="clipboard"></i>
+                                </div>
+                                <h3 class="panel-title">Conferência</h3>
+                                <p class="panel-description">Conferência de entrada e saída de mercadorias.</p>
+                                <span class="panel-status status-active">
+                                    <i data-feather="check-circle" class="h-4 w-4"></i> Ativo
+                                </span>
+                            </div>
+
+                            <!-- Configurações -->
                             <div class="panel-card" onclick="window.GG.showView('settingsView', document.querySelector('a[href=\'#settings\']'))">
                                 <div class="panel-icon bg-gray-100 text-gray-600">
-                            <!-- ====================================================== -->
                                     <i data-feather="settings"></i>
                                 </div>
                                 <h3 class="panel-title">Configurações</h3>
-                                <p class="panel-description">Gerenciar links de incorporação dos painéis do Looker Studio.</p>
+                                <p class="panel-description">Gerenciar links de incorporação dos painéis.</p>
                                 <span class="panel-status status-active">
                                     <i data-feather="check-circle" class="h-4 w-4"></i> Ativo
                                 </span>
@@ -205,252 +236,309 @@
                         </div>
                     </div>
 
-                    <!-- 
-                        View 2: Uploader IMOB (Refatorado)
-                        Nosso uploader antigo, agora dentro da view.
-                    -->
+                    <!-- View 2: Uploader IMOB -->
                     <div id="imobView" class="view-content">
-                        
                         <h1 class="text-2xl font-semibold text-gray-800 mb-6">Upload em Lote - Painel IMOB</h1>
-                        
-                        <!-- ====================================================== -->
-                        <!-- <<< ATUALIZAÇÃO: Adicionando Sub-Abas >>> -->
-                        <!-- ====================================================== -->
                         <div class="imob-sub-nav mb-6">
-                            <button id="imobSubTab_Update" class="imob-sub-btn active">
-                                <i data-feather="upload" class="h-4 w-4 mr-2"></i> Atualizar Dados
-                            </button>
-                            <button id="imobSubTab_Panel" class="imob-sub-btn">
-                                <i data-feather="trello" class="h-4 w-4 mr-2"></i> Visualizar Painel
-                            </button>
+                            <button id="imobSubTab_Update" class="imob-sub-btn active"><i data-feather="upload" class="h-4 w-4 mr-2"></i> Atualizar Dados</button>
+                            <button id="imobSubTab_Panel" class="imob-sub-btn"><i data-feather="trello" class="h-4 w-4 mr-2"></i> Visualizar Painel</button>
                         </div>
-                        <!-- ====================================================== -->
 
-                        <!-- ====================================================== -->
-                        <!-- <<< ATUALIZAÇÃO: Painel de Atualização >>> -->
-                        <!-- (Todo o conteúdo de upload antigo vai aqui dentro) -->
-                        <!-- ====================================================== -->
                         <div id="imobSubPanel_Update" class="imob-sub-panel active">
-                            
-                            <!-- ====================================================== -->
-                            <!-- <<< CORREÇÃO: A ESTRUTURA ABAIXO HAVIA SIDO APAGADA >>> -->
-                            <!-- ====================================================== -->
-
-                            <!-- O wrapper do formulário (controla a exibição do sucesso) -->
                             <div id="imobUploaderForm" style="display: block;">
-                                
-                                <!-- Etapa 1: Filtros (RESTAURADO) -->
                                 <div class="info-card mb-6">
                                     <h2 class="text-xl font-semibold mb-4 text-gray-700">1. Filtros de Inserção</h2>
-                                    <p class="text-sm text-gray-600 mb-4">
-                                        Preencha os valores que serão aplicados a todas as linhas novas.
-                                    </p>
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div>
                                             <label for="filterEmpresa" class="block text-sm font-medium text-gray-600">Empresa (Filial)</label>
-                                            <select id="filterEmpresa" class="form-input">
-                                                <option value="">Carregando empresas...</option>
-                                            </select>
-                                            <p class="text-xs text-gray-500 mt-1">Selecione a Empresa/Filial.</p>
+                                            <select id="filterEmpresa" class="form-input"><option value="">Carregando...</option></select>
                                         </div>
                                         <div>
                                             <label for="filterProduto" class="block text-sm font-medium text-gray-600">Produto</label>
-                                            <select id="filterProduto" class="form-input">
-                                                <option value="">Carregando produtos...</option>
-                                            </select>
-                                            <p class="text-xs text-gray-500 mt-1">Selecione o produto a ser aplicado.</p>
+                                            <select id="filterProduto" class="form-input"><option value="">Carregando...</option></select>
                                         </div>
                                     </div>
                                 </div>
 
-                                <!-- Etapa 2: Colar Dados (JÁ EXISTIA) -->
                                 <div class="info-card mb-6">
                                     <h2 class="text-xl font-semibold mb-4 text-gray-700">2. Inserir Dados</h2>
-                                    
-                                    <!-- Navegação das Abas -->
                                     <div class="imob-tab-nav mb-4">
-                                        <button id="imobPasteTab" class="imob-tab-btn active">
-                                            <i data-feather="clipboard" class="h-4 w-4 mr-2"></i> Colar Dados
-                                        </button>
-                                        <button id="imobUploadTab" class="imob-tab-btn">
-                                            <i data-feather="upload" class="h-4 w-4 mr-2"></i> Importar Arquivo
-                                        </button>
+                                        <button id="imobPasteTab" class="imob-tab-btn active"><i data-feather="clipboard" class="h-4 w-4 mr-2"></i> Colar Dados</button>
+                                        <button id="imobUploadTab" class="imob-tab-btn"><i data-feather="upload" class="h-4 w-4 mr-2"></i> Importar Arquivo</button>
                                     </div>
-
-                                    <!-- Painel de Colar (Padrão) -->
                                     <div id="pastePanel" class="tab-panel active">
-                                        <p class="text-sm text-gray-600 mb-4">
-                                            Cole os dados copiados do seu sistema interno. (Sem cabeçalho).
-                                        </p>
                                         <textarea id="dataInput" rows="10" class="form-input font-mono" placeholder="Cole os dados aqui..."></textarea>
                                     </div>
-
-                                    <!-- Painel de Importar (Escondido) -->
                                     <div id="uploadPanel" class="tab-panel" style="display: none;">
-                                        <p class="text-sm text-gray-600 mb-4">
-                                            Para grandes volumes, faça o upload de um arquivo de texto (.txt, .csv, .tsv). O conteúdo será carregado na área de texto para processamento.
-                                        </p>
                                         <input type="file" id="imobFileInput" class="form-input" accept=".txt,.csv,.tsv,.log">
                                         <p id="fileStatus" class="text-xs text-gray-500 mt-2"></p>
                                     </div>
-
-                                    <!-- Botão de Processar (agora fora das abas) -->
-                                    <button id="processButton" class="btn btn-primary w-full mt-6 disabled:opacity-50" disabled>
-                                        <i data-feather="refresh-cw" class="h-4 w-4 mr-2"></i> Processar e Validar Dados
-                                    </button>
+                                    <button id="processButton" class="btn btn-primary w-full mt-6"><i data-feather="refresh-cw" class="h-4 w-4 mr-2"></i> Processar e Validar Dados</button>
                                 </div>
 
-                                <!-- Etapa 3: Prévia (RESTAURADO) -->
                                 <div id="previewSection" class="info-card hidden">
-                                    <h2 class="text-xl font-semibold mb-4 text-gray-700">3. Prévia dos Dados para Inserção</h2>
+                                    <h2 class="text-xl font-semibold mb-4 text-gray-700">3. Prévia dos Dados</h2>
                                     <p id="previewSummary" class="text-sm text-gray-600 mb-4"></p>
                                     <div class="overflow-x-auto max-h-96 border border-gray-200 rounded-md">
                                         <table class="min-w-full divide-y divide-gray-200">
-                                            <thead class="bg-gray-50">
-                                                <tr id="previewHeader"></tr>
-                                            </thead>
+                                            <thead class="bg-gray-50"><tr id="previewHeader"></tr></thead>
                                             <tbody id="previewBody" class="bg-white divide-y divide-gray-200"></tbody>
                                         </table>
                                     </div>
-                                    <button id="insertButton" class="btn btn-success w-full mt-6 disabled:opacity-50">
-                                        <i data-feather="database" class="h-4 w-4 mr-2"></i> Confirmar e Inserir Linhas no Banco
-                                    </button>
-                                    <p id="insertStatus" class="text-sm text-center text-gray-500 mt-4"></p>
+                                    <button id="insertButton" class="btn btn-success w-full mt-6"><i data-feather="database" class="h-4 w-4 mr-2"></i> Confirmar e Inserir</button>
                                 </div>
                             </div>
-
-                            <!-- Tela de Sucesso (RESTAURADO) -->
                             <div id="imobSuccessScreen" class="success-animation-container" style="display: none;">
-                                <div class="success-icon">
-                                    <div class="circle"></div>
-                                    <div class="checkmark"></div>
-                                </div>
+                                <div class="success-icon"><div class="circle"></div><div class="checkmark"></div></div>
                                 <h2 class="text-2xl font-semibold text-gray-800 mb-2">Inserção Concluída!</h2>
-                                <p class="text-gray-600 mb-8">Os dados foram enviados com sucesso para o banco do B.I.</p>
-                                
-                                <div class="flex flex-col sm:flex-row gap-4">
-                                    <button id="imobSuccessAgainBtn" class="btn btn-secondary w-full sm:w-auto">
-                                        <i data-feather="upload" class="h-4 w-4 mr-2"></i> Inserir Novo Lote
-                                    </button>
-                                    <button id="imobSuccessHomeBtn" class="btn btn-primary w-full sm:w-auto">
-                                        <i data-feather="home" class="h-4 w-4 mr-2"></i> Voltar para Home
-                                    </button>
-                                </div>
+                                <button id="imobSuccessHomeBtn" class="btn btn-primary mt-4">Voltar para Home</button>
                             </div>
-                            
-                            <!-- ====================================================== -->
-                            <!-- <<< FIM DA CORREÇÃO >>> -->
-                            <!-- ====================================================== -->
-                            
                         </div>
-                        <!-- ====================================================== -->
-                        <!-- <<< FIM DO PAINEL DE ATUALIZAÇÃO >>> -->
-                        <!-- ====================================================== -->
-
-
-                        <!-- ====================================================== -->
-                        <!-- <<< ATUALIZAÇÃO: Painel de Visualização (Looker) >>> -->
-                        <!-- ====================================================== -->
                         <div id="imobSubPanel_Panel" class="imob-sub-panel">
-                            <div class="info-card p-0" style="overflow: hidden; height: 100vh;">
-                                <iframe 
-                                    id="imobLookerIframe"
-                                    class="looker-iframe"
-                                    src="" 
-                                    frameborder="0"
-                                    allowfullscreen>
-                                </iframe>
+                            <div class="info-card p-0 looker-container">
+                                <iframe id="imobLookerIframe" class="looker-iframe" src="" frameborder="0" allowfullscreen></iframe>
                             </div>
                         </div>
-                        <!-- ====================================================== -->
-                        <!-- <<< FIM DO PAINEL DE VISUALIZAÇÃO >>> -->
-                        <!-- ====================================================== -->
-
-
                     </div>
 
-                    <!-- ====================================================== -->
-                    <!-- <<< ATUALIZAÇÃO: Removido style="display: none;" >>> -->
-                    <!-- ====================================================== -->
-                    <!-- 
-                        View 3: Looker Dashboard (NOVA) 
-                        Tela para incorporar o painel do Looker.
-                    -->
+                    <!-- View 3: Movimentação -->
+                    <div id="movimentacaoView" class="view-content">
+                        <h1 class="text-2xl font-semibold text-gray-800 mb-6">Upload - Movimentação</h1>
+                        <div class="imob-sub-nav mb-6">
+                            <button id="movSubTab_Update" class="imob-sub-btn active"><i data-feather="upload" class="h-4 w-4 mr-2"></i> Atualizar Dados</button>
+                            <button id="movSubTab_Panel" class="imob-sub-btn"><i data-feather="trello" class="h-4 w-4 mr-2"></i> Visualizar Painel</button>
+                        </div>
+                        <div id="movSubPanel_Update" class="imob-sub-panel active">
+                            <div id="movUploaderForm" style="display: block;">
+                                <div class="info-card mb-6">
+                                    <h2 class="text-xl font-semibold mb-4 text-gray-700">1. Inserir Dados</h2>
+                                    <div class="imob-tab-nav mb-4">
+                                        <button id="movPasteTab" class="imob-tab-btn active"><i data-feather="clipboard" class="h-4 w-4 mr-2"></i> Colar</button>
+                                        <button id="movUploadTab" class="imob-tab-btn"><i data-feather="upload" class="h-4 w-4 mr-2"></i> Arquivo</button>
+                                    </div>
+                                    <div id="movPastePanel" class="tab-panel active">
+                                        <textarea id="movDataInput" rows="10" class="form-input font-mono" placeholder="Cole os dados aqui..."></textarea>
+                                    </div>
+                                    <div id="movUploadPanel" class="tab-panel" style="display: none;">
+                                        <input type="file" id="movFileInput" class="form-input" accept=".txt,.csv,.tsv">
+                                        <p id="movFileStatus" class="text-xs text-gray-500 mt-2"></p>
+                                    </div>
+                                    <button id="movProcessButton" class="btn btn-primary w-full mt-6"><i data-feather="refresh-cw" class="h-4 w-4 mr-2"></i> Processar</button>
+                                </div>
+                                <div id="movPreviewSection" class="info-card hidden">
+                                    <h2 class="text-xl font-semibold mb-4 text-gray-700">2. Prévia</h2>
+                                    <p id="movPreviewSummary" class="text-sm text-gray-600 mb-4"></p>
+                                    <div class="overflow-x-auto max-h-96 border border-gray-200 rounded-md">
+                                        <table class="min-w-full divide-y divide-gray-200"><thead class="bg-gray-50"><tr id="movPreviewHeader"></tr></thead><tbody id="movPreviewBody" class="bg-white divide-y divide-gray-200"></tbody></table>
+                                    </div>
+                                    <button id="movInsertButton" class="btn btn-success w-full mt-6"><i data-feather="database" class="h-4 w-4 mr-2"></i> Confirmar Inserção</button>
+                                    <p id="movInsertStatus" class="text-sm text-center text-gray-500 mt-4"></p>
+                                </div>
+                            </div>
+                            <div id="movSuccessScreen" class="success-animation-container" style="display: none;">
+                                <div class="success-icon"><div class="circle"></div><div class="checkmark"></div></div>
+                                <h2 class="text-2xl font-semibold text-gray-800 mb-2">Atualizado!</h2>
+                                <button id="movSuccessHomeBtn" class="btn btn-primary mt-4">Voltar</button>
+                                <button id="movSuccessAgainBtn" class="btn btn-secondary mt-4">Novo Lote</button>
+                            </div>
+                        </div>
+                        <div id="movSubPanel_Panel" class="imob-sub-panel">
+                            <div class="info-card p-0 looker-container">
+                                <iframe id="movLookerIframe" class="looker-iframe" src="" frameborder="0" allowfullscreen></iframe>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- View 4: Separação (NOVO) -->
+                    <div id="separacaoView" class="view-content">
+                        <h1 class="text-2xl font-semibold text-gray-800 mb-6">Upload - Separação</h1>
+                        <div class="imob-sub-nav mb-6">
+                            <button id="sepSubTab_Update" class="imob-sub-btn active"><i data-feather="upload" class="h-4 w-4 mr-2"></i> Atualizar Dados</button>
+                            <button id="sepSubTab_Panel" class="imob-sub-btn"><i data-feather="trello" class="h-4 w-4 mr-2"></i> Visualizar Painel</button>
+                        </div>
+                        <div id="sepSubPanel_Update" class="imob-sub-panel active">
+                            <div id="sepUploaderForm" style="display: block;">
+                                <div class="info-card mb-6">
+                                    <h2 class="text-xl font-semibold mb-4 text-gray-700">1. Inserir Dados de Separação</h2>
+                                    <div class="imob-tab-nav mb-4">
+                                        <button id="sepPasteTab" class="imob-tab-btn active"><i data-feather="clipboard" class="h-4 w-4 mr-2"></i> Colar</button>
+                                        <button id="sepUploadTab" class="imob-tab-btn"><i data-feather="upload" class="h-4 w-4 mr-2"></i> Arquivo</button>
+                                    </div>
+                                    <div id="sepPastePanel" class="tab-panel active">
+                                        <textarea id="sepDataInput" rows="10" class="form-input font-mono" placeholder="Cole os dados aqui (TAB ou Ponto e Vírgula)..."></textarea>
+                                    </div>
+                                    <div id="sepUploadPanel" class="tab-panel" style="display: none;">
+                                        <input type="file" id="sepFileInput" class="form-input" accept=".txt,.csv,.tsv">
+                                        <p id="sepFileStatus" class="text-xs text-gray-500 mt-2"></p>
+                                    </div>
+                                    <button id="sepProcessButton" class="btn btn-primary w-full mt-6"><i data-feather="refresh-cw" class="h-4 w-4 mr-2"></i> Processar</button>
+                                </div>
+                                <div id="sepPreviewSection" class="info-card hidden">
+                                    <h2 class="text-xl font-semibold mb-4 text-gray-700">2. Prévia</h2>
+                                    <p id="sepPreviewSummary" class="text-sm text-gray-600 mb-4"></p>
+                                    <div class="overflow-x-auto max-h-96 border border-gray-200 rounded-md">
+                                        <table class="min-w-full divide-y divide-gray-200"><thead class="bg-gray-50"><tr id="sepPreviewHeader"></tr></thead><tbody id="sepPreviewBody" class="bg-white divide-y divide-gray-200"></tbody></table>
+                                    </div>
+                                    <button id="sepInsertButton" class="btn btn-success w-full mt-6"><i data-feather="database" class="h-4 w-4 mr-2"></i> Confirmar Inserção</button>
+                                    <p id="sepInsertStatus" class="text-sm text-center text-gray-500 mt-4"></p>
+                                </div>
+                            </div>
+                            <div id="sepSuccessScreen" class="success-animation-container" style="display: none;">
+                                <div class="success-icon"><div class="circle"></div><div class="checkmark"></div></div>
+                                <h2 class="text-2xl font-semibold text-gray-800 mb-2">Separação Atualizada!</h2>
+                                <div class="flex gap-4 justify-center mt-4">
+                                    <button id="sepSuccessAgainBtn" class="btn btn-secondary">Novo Lote</button>
+                                    <button id="sepSuccessHomeBtn" class="btn btn-primary">Home</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="sepSubPanel_Panel" class="imob-sub-panel">
+                            <div class="info-card p-0 looker-container">
+                                <iframe id="sepLookerIframe" class="looker-iframe" src="" frameborder="0" allowfullscreen></iframe>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- View 5: Reconferência -->
+                    <div id="reconferenciaView" class="view-content">
+                        <h1 class="text-2xl font-semibold text-gray-800 mb-6">Upload - Reconferência</h1>
+                        <div class="imob-sub-nav mb-6">
+                            <button id="reconfSubTab_Update" class="imob-sub-btn active"><i data-feather="upload" class="h-4 w-4 mr-2"></i> Atualizar Dados</button>
+                            <button id="reconfSubTab_Panel" class="imob-sub-btn"><i data-feather="trello" class="h-4 w-4 mr-2"></i> Visualizar Painel</button>
+                        </div>
+                        <div id="reconfSubPanel_Update" class="imob-sub-panel active">
+                            <div id="reconfUploaderForm">
+                                <div class="info-card mb-6">
+                                    <h2 class="text-xl font-semibold mb-4 text-gray-700">1. Inserir Dados</h2>
+                                    <div class="imob-tab-nav mb-4">
+                                        <button id="reconfPasteTab" class="imob-tab-btn active"><i data-feather="clipboard" class="h-4 w-4 mr-2"></i> Colar</button>
+                                        <button id="reconfUploadTab" class="imob-tab-btn"><i data-feather="upload" class="h-4 w-4 mr-2"></i> Arquivo</button>
+                                    </div>
+                                    <div id="reconfPastePanel" class="tab-panel active">
+                                        <textarea id="reconfDataInput" rows="10" class="form-input font-mono" placeholder="Cole os dados aqui..."></textarea>
+                                    </div>
+                                    <div id="reconfUploadPanel" class="tab-panel" style="display: none;">
+                                        <input type="file" id="reconfFileInput" class="form-input" accept=".txt,.csv,.tsv">
+                                        <p id="reconfFileStatus" class="text-xs text-gray-500 mt-2"></p>
+                                    </div>
+                                    <button id="reconfProcessButton" class="btn btn-primary w-full mt-6"><i data-feather="refresh-cw" class="h-4 w-4 mr-2"></i> Processar</button>
+                                </div>
+                                <div id="reconfPreviewSection" class="info-card hidden">
+                                    <h2 class="text-xl font-semibold mb-4 text-gray-700">2. Prévia</h2>
+                                    <p id="reconfPreviewSummary" class="text-sm text-gray-600 mb-4"></p>
+                                    <div class="overflow-x-auto max-h-96 border border-gray-200 rounded-md">
+                                        <table class="min-w-full divide-y divide-gray-200"><thead class="bg-gray-50"><tr id="reconfPreviewHeader"></tr></thead><tbody id="reconfPreviewBody" class="bg-white divide-y divide-gray-200"></tbody></table>
+                                    </div>
+                                    <button id="reconfInsertButton" class="btn btn-success w-full mt-6"><i data-feather="database" class="h-4 w-4 mr-2"></i> Confirmar Inserção</button>
+                                    <p id="reconfInsertStatus" class="text-sm text-center text-gray-500 mt-4"></p>
+                                </div>
+                            </div>
+                            <div id="reconfSuccessScreen" class="success-animation-container" style="display: none;">
+                                <div class="success-icon"><div class="circle"></div><div class="checkmark"></div></div>
+                                <h2 class="text-2xl font-semibold text-gray-800 mb-2">Reconferência Atualizada!</h2>
+                                <div class="flex gap-4 justify-center mt-4">
+                                    <button id="reconfSuccessAgainBtn" class="btn btn-secondary">Novo Lote</button>
+                                    <button id="reconfSuccessHomeBtn" class="btn btn-primary">Home</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="reconfSubPanel_Panel" class="imob-sub-panel">
+                            <div class="info-card p-0 looker-container">
+                                <iframe id="reconfLookerIframe" class="looker-iframe" src="" frameborder="0" allowfullscreen></iframe>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- View 6: Conferência -->
+                    <div id="conferenciaView" class="view-content">
+                        <h1 class="text-2xl font-semibold text-gray-800 mb-6">Upload - Conferência</h1>
+                        <div class="imob-sub-nav mb-6">
+                            <button id="confSubTab_Update" class="imob-sub-btn active"><i data-feather="upload" class="h-4 w-4 mr-2"></i> Atualizar Dados</button>
+                            <button id="confSubTab_Panel" class="imob-sub-btn"><i data-feather="trello" class="h-4 w-4 mr-2"></i> Visualizar Painel</button>
+                        </div>
+                        <div id="confSubPanel_Update" class="imob-sub-panel active">
+                            <div id="confUploaderForm">
+                                <div class="info-card mb-6">
+                                    <h2 class="text-xl font-semibold mb-4 text-gray-700">1. Inserir Dados</h2>
+                                    <div class="imob-tab-nav mb-4">
+                                        <button id="confPasteTab" class="imob-tab-btn active"><i data-feather="clipboard" class="h-4 w-4 mr-2"></i> Colar</button>
+                                        <button id="confUploadTab" class="imob-tab-btn"><i data-feather="upload" class="h-4 w-4 mr-2"></i> Arquivo</button>
+                                    </div>
+                                    <div id="confPastePanel" class="tab-panel active">
+                                        <textarea id="confDataInput" rows="10" class="form-input font-mono" placeholder="Cole os dados aqui..."></textarea>
+                                    </div>
+                                    <div id="confUploadPanel" class="tab-panel" style="display: none;">
+                                        <input type="file" id="confFileInput" class="form-input" accept=".txt,.csv,.tsv">
+                                        <p id="confFileStatus" class="text-xs text-gray-500 mt-2"></p>
+                                    </div>
+                                    <button id="confProcessButton" class="btn btn-primary w-full mt-6"><i data-feather="refresh-cw" class="h-4 w-4 mr-2"></i> Processar</button>
+                                </div>
+                                <div id="confPreviewSection" class="info-card hidden">
+                                    <h2 class="text-xl font-semibold mb-4 text-gray-700">2. Prévia</h2>
+                                    <p id="confPreviewSummary" class="text-sm text-gray-600 mb-4"></p>
+                                    <div class="overflow-x-auto max-h-96 border border-gray-200 rounded-md">
+                                        <table class="min-w-full divide-y divide-gray-200"><thead class="bg-gray-50"><tr id="confPreviewHeader"></tr></thead><tbody id="confPreviewBody" class="bg-white divide-y divide-gray-200"></tbody></table>
+                                    </div>
+                                    <button id="confInsertButton" class="btn btn-success w-full mt-6"><i data-feather="database" class="h-4 w-4 mr-2"></i> Confirmar Inserção</button>
+                                    <p id="confInsertStatus" class="text-sm text-center text-gray-500 mt-4"></p>
+                                </div>
+                            </div>
+                            <div id="confSuccessScreen" class="success-animation-container" style="display: none;">
+                                <div class="success-icon"><div class="circle"></div><div class="checkmark"></div></div>
+                                <h2 class="text-2xl font-semibold text-gray-800 mb-2">Conferência Atualizada!</h2>
+                                <div class="flex gap-4 justify-center mt-4">
+                                    <button id="confSuccessAgainBtn" class="btn btn-secondary">Novo Lote</button>
+                                    <button id="confSuccessHomeBtn" class="btn btn-primary">Home</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="confSubPanel_Panel" class="imob-sub-panel">
+                            <div class="info-card p-0 looker-container">
+                                <iframe id="confLookerIframe" class="looker-iframe" src="" frameborder="0" allowfullscreen></iframe>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- View Looker Genérico -->
                     <div id="lookerView" class="view-content">
                         <h1 id="lookerTitle" class="text-2xl font-semibold text-gray-800 mb-6">Carregando Painel...</h1>
-                        
-                        <!-- 
-                            O card abaixo usa p-0 (sem padding) e overflow-hidden 
-                            para que o iframe ocupe todo o espaço.
-                        -->
                         <div class="info-card p-0" style="overflow: hidden; height: 80vh;">
-                            <!-- 
-                                IMPORTANTE: 
-                                Substitua a URL abaixo pela URL de 'Embed' (incorporação) 
-                                pública ou assinada fornecida pelo seu painel do Looker.
-                            -->
-                            <iframe 
-                                id="lookerIframe"
-                                class="looker-iframe"
-                                src="" 
-                                frameborder="0"
-                                allowfullscreen>
-                            </iframe>
+                            <iframe id="lookerIframe" class="looker-iframe" src="" frameborder="0" allowfullscreen></iframe>
                         </div>
                     </div>
 
-                    <!-- ====================================================== -->
-                    <!-- <<< ATUALIZAÇÃO: Removido style="display: none;" >>> -->
-                    <!-- ====================================================== -->
-                    <!-- 
-                        View 4: Configurações (NOVA) 
-                        Tela para gerenciar os links do Looker
-                    -->
+                    <!-- Configurações -->
                     <div id="settingsView" class="view-content">
-                        <h1 class="text-2xl font-semibold text-gray-800 mb-6">Configurações dos Painéis</h1>
-                        
+                        <h1 class="text-2xl font-semibold text-gray-800 mb-6">Configurações</h1>
                         <div id="settingsAlertContainer"></div>
-
                         <div class="info-card mb-6">
                             <h2 class="text-xl font-semibold mb-4 text-gray-700">Links de Incorporação (Looker Studio)</h2>
-                            <p class="text-sm text-gray-600 mb-6">
-                                Cole aqui a URL de incorporação (embed URL) de cada painel. Lembre-se de configurar o painel no Looker Studio como "Qualquer pessoa com o link pode ver".
-                            </p>
+                            <p class="text-sm text-gray-600 mb-6">Cole as URLs de Embed geradas pelo Looker Studio.</p>
 
-                            <div class="form-group mb-6">
-                                <label for="settingLinkImob" class="block text-sm font-medium text-gray-700 mb-2">Link do Painel IMOB</label>
-                                <input type="url" id="settingLinkImob" class="form-input" placeholder="https://lookerstudio.google.com/embed/reporting/...">
-                            </div>
+                            <div class="form-group mb-6"><label>Painel IMOB</label><input type="url" id="settingLinkImob" class="form-input" placeholder="https://lookerstudio.google.com/embed/..."></div>
+                            <div class="form-group mb-6"><label>Painel Movimentação</label><input type="url" id="settingLinkMov" class="form-input"></div>
+                            
+                            <!-- Novo Campo Separação -->
+                            <div class="form-group mb-6"><label>Painel Separação</label><input type="url" id="settingLinkSeparacao" class="form-input" placeholder="https://lookerstudio.google.com/embed/..."></div>
 
-                            <div class="form-group mb-6">
-                                <label for="settingLinkVendas" class="block text-sm font-medium text-gray-700 mb-2">Link do Painel Vendas</label>
-                                <input type="url" id="settingLinkVendas" class="form-input" placeholder="https://lookerstudio.google.com/embed/reporting/...">
-                            </div>
+                            <div class="form-group mb-6"><label>Painel Reconferência</label><input type="url" id="settingLinkReconf" class="form-input"></div>
+                            <div class="form-group mb-6"><label>Painel Conferência</label><input type="url" id="settingLinkConf" class="form-input"></div>
+                            <div class="form-group mb-6"><label>Painel Vendas</label><input type="url" id="settingLinkVendas" class="form-input"></div>
 
-                            <button id="saveSettingsBtn" class="btn btn-primary w-full sm:w-auto">
-                                <i data-feather="save" class="h-4 w-4 mr-2"></i> Salvar Configurações
-                            </button>
+                            <button id="saveSettingsBtn" class="btn btn-primary w-full sm:w-auto"><i data-feather="save" class="h-4 w-4 mr-2"></i> Salvar Configurações</button>
                         </div>
                     </div>
-                    <!-- ====================================================== -->
-                    <!-- <<< FIM DA ATUALIZAÇÃO >>> -->
-                    <!-- ====================================================== -->
 
                 </div>
             </main>
         </div>
     </div>
     
-    <!-- Tela de Loading (do seu modelo) -->
     <div class="loading" id="loading" style="display: none;"><div class="spinner"></div><p>Processando...</p></div>
-
-    <!-- Container de Notificações (do seu modelo) -->
     <div id="notificationContainer"></div>
 
-    <!-- JS (Novo arquivo) -->
     <script src="app.js"></script>
     <script>
-        // Inicializa os ícones do Feather
         feather.replace();
     </script>
 </body>
