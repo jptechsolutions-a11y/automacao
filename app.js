@@ -298,7 +298,37 @@ window.GG = {};
     
     async function handleProcessData() {
         const rawData = document.getElementById('dataInput').value;
-        if (!rawData) return;
+        
+        // --- INÍCIO DA LEITURA E VALIDAÇÃO DE FILTROS ---
+        const empresaSelect = document.getElementById('filterEmpresa');
+        const produtoSelect = document.getElementById('filterProduto');
+        
+        const selectedEmpresaOption = empresaSelect.options[empresaSelect.selectedIndex];
+        const selectedProdutoOption = produtoSelect.options[produtoSelect.selectedIndex];
+
+        // Seção Empresa
+        const selectedEmpresaCodigo = selectedEmpresaOption.value;
+        const selectedEmpresaNome = selectedEmpresaOption.dataset.nome;
+        const selectedEmpresaUF = selectedEmpresaOption.dataset.uf;
+
+        // Seção Produto
+        const selectedProdutoCodigo = selectedProdutoOption.value;
+        const selectedProdutoNome = selectedProdutoOption.dataset.nome;
+        const selectedProdutoCusto = selectedProdutoOption.dataset.custo;
+
+        if (!rawData) {
+             document.getElementById('previewSummary').textContent = 'Nenhum dado inserido (colado ou importado).';
+             document.getElementById('previewSection').classList.remove('hidden');
+             return;
+        }
+        if (!selectedEmpresaCodigo || !selectedProdutoCodigo) {
+            document.getElementById('previewSummary').textContent = 'Selecione a Empresa e o Produto.';
+            document.getElementById('previewSection').classList.remove('hidden');
+            return;
+        }
+        // --- FIM DA LEITURA E VALIDAÇÃO DE FILTROS ---
+
+
         GG.showLoading(true, 'Processando e Validando Dados IMOB...');
         
         try {
@@ -309,6 +339,7 @@ window.GG = {};
             
             // 1.1 Coletar todas as SEQMOVIMENTAÇÃO (limpas) existentes no batch
             const currentSequences = parsed.map(row => {
+                // CORREÇÃO BIGINT: Limpa pontos e vírgulas para garantir INT
                 let cleanedSeq = String(row['SEQMOVIMENTAÇÃO'] || '').replace(/\./g, '').replace(/,/g, '');
                 return parseInt(cleanedSeq) || null;
             }).filter(seq => seq !== null);
@@ -316,7 +347,7 @@ window.GG = {};
             // 1.2 Fetch das sequências que JÁ existem no Supabase
             let existingSequences = new Set();
             if (currentSequences.length > 0) {
-                 const { data: existingData, error: fetchError } = await supabase
+                const { data: existingData, error: fetchError } = await supabase
                     .from('imob')
                     .select('SEQMOVIMENTAÇÃO')
                     .in('SEQMOVIMENTAÇÃO', currentSequences);
@@ -329,57 +360,67 @@ window.GG = {};
 
             // 2. Aplicar Tratamento de Formatação, PROCV e Filtro
             parsed.forEach(row => {
-               // A) Limpeza e Conversão
-               
-               // SEQMOVIMENTAÇÃO (Inteiro/BigInt Limpo - Resolve o erro '73,000')
-               let cleanedSeq = String(row['SEQMOVIMENTAÇÃO'] || '').replace(/\./g, '').replace(/,/g, '');
-               const seqMov = parseInt(cleanedSeq) || null; 
-               row['SEQMOVIMENTAÇÃO'] = seqMov;
-               
-               // NUMÉRICOS (Decimais)
-               row['QUANTIDADE'] = parsePtBrFloat(row['QUANTIDADE']);
-               row['SALDO'] = parsePtBrFloat(row['SALDO']);
-               
-               // DATA (ISO)
-               const dataStr = row['DATA'];
-               row['DATA'] = convertDateBRToISO(dataStr);
-               
-               // B) Campos Gerados
-               
-               // NOVO CAMPO: ANO
-               if (row['DATA']) {
-                   row['ano'] = new Date(row['DATA']).getFullYear();
-               } else {
-                   row['ano'] = null;
-               }
+                // A) Limpeza e Conversão
+                
+                // SEQMOVIMENTAÇÃO (Inteiro/BigInt Limpo - Resolve o erro '73,000')
+                let cleanedSeq = String(row['SEQMOVIMENTAÇÃO'] || '').replace(/\./g, '').replace(/,/g, '');
+                const seqMov = parseInt(cleanedSeq) || null; 
+                row['SEQMOVIMENTAÇÃO'] = seqMov;
+                
+                // NUMÉRICOS (Decimais - usa a função parsePtBrFloat)
+                row['QUANTIDADE'] = parsePtBrFloat(row['QUANTIDADE']);
+                row['SALDO'] = parsePtBrFloat(row['SALDO']);
+                
+                // DATA (ISO)
+                const dataStr = row['DATA'];
+                row['DATA'] = convertDateBRToISO(dataStr);
+                
+                // B) Campos Gerados
+                
+                // NOVO CAMPO: ANO
+                if (row['DATA']) {
+                    row['ano'] = new Date(row['DATA']).getFullYear();
+                } else {
+                    row['ano'] = null;
+                }
 
-               // C) Split e PROCV (Lojas/Segmento)
-               const idFornecedorFull = row['ID - Fornecedor'] || '';
-               const parts = idFornecedorFull.split('-');
-               const idKey = parts[0].trim();
-               const fornecedorName = parts.slice(1).join('-').trim() || null;
-               
-               // Novas colunas (a serem inseridas no banco, se a tabela imob as tiver)
-               row['ID'] = parseInt(idKey) || null;
-               row['fornecedor'] = fornecedorName;
-               row['loja'] = fornecedorName; // Valor default (SEERRO/IFERROR)
-               row['Segmento'] = null; // Valor default
+                // C) Split e PROCV (Lojas/Segmento)
+                const idFornecedorFull = row['ID - Fornecedor'] || '';
+                const parts = idFornecedorFull.split('-');
+                const idKey = parts[0].trim();
+                const fornecedorName = parts.slice(1).join('-').trim() || null;
+                
+                // Novas colunas derivadas do ID - Fornecedor
+                row['ID'] = parseInt(idKey) || null; // ID numérico
+                row['fornecedor'] = fornecedorName;
+                row['loja'] = fornecedorName; // Valor default (SEERRO/IFERROR)
+                row['Segmento'] = null; // Valor default
 
-               // Simulação PROCV (VLOOKUP) - Usando o mapa carregado globalmente
-               if (globalLojasMap.has(idKey)) {
-                   const lojaData = globalLojasMap.get(idKey);
-                   row['loja'] = lojaData.loja || fornecedorName; 
-                   row['Segmento'] = lojaData.segmento;
-               } 
+                // Simulação PROCV (VLOOKUP) - Usando o mapa carregado globalmente
+                if (globalLojasMap.has(idKey)) {
+                    const lojaData = globalLojasMap.get(idKey);
+                    row['loja'] = lojaData.loja || fornecedorName; 
+                    row['Segmento'] = lojaData.segmento;
+                } 
+                
+                // D) Adicionar campos de Filtro (colunas adicionais)
+                // Estas colunas vêm dos dropdowns
+                row['Emp'] = selectedEmpresaCodigo; // Código da empresa
+                row['nome_empresa'] = selectedEmpresaNome; // Nome da empresa
+                row['uf_empresa'] = selectedEmpresaUF; // UF da empresa
+                
+                row['Produto'] = selectedProdutoNome; // Nome do produto
+                row['codigo_produto'] = selectedProdutoCodigo; // Código do produto
+                row['custo_unitario'] = selectedProdutoCusto; // Custo
 
-               // D) Filtro de Duplicados
-               if (seqMov !== null && existingSequences.has(seqMov)) {
-                   duplicates++;
-                   return; // Ignora duplicados
-               }
-               
-               // E) Adicionar linha processada
-               rowsToInsert.push(row);
+                // E) Filtro de Duplicados
+                if (seqMov !== null && existingSequences.has(seqMov)) {
+                    duplicates++;
+                    return; // Ignora duplicados
+                }
+                
+                // F) Adicionar linha processada
+                rowsToInsert.push(row);
             });
 
             globalRowsToInsert = rowsToInsert; 
@@ -389,20 +430,25 @@ window.GG = {};
             const newLines = rowsToInsert.length;
             const summary = `Total de ${totalLines} linhas processadas. ${duplicates} já existem no banco. ${newLines} linhas novas prontas para inserção.`;
 
-            renderPreview(globalRowsToInsert, newLines, 'previewHeader', 'previewBody', 'previewSummary', summary);
+            // O totalLines é usado aqui como o segundo argumento (total) na função renderPreview
+            renderPreview(globalRowsToInsert, totalLines, 'previewHeader', 'previewBody', 'previewSummary', summary);
             
             document.getElementById('previewSection').classList.remove('hidden');
             document.getElementById('insertButton').disabled = newLines === 0;
 
         } catch (error) { 
             console.error('Erro no processamento IMOB:', error);
-            alert(`Erro ao processar/validar dados: ${error.message}`);
+            // Mostrar erro na tela de preview
+            document.getElementById('previewSummary').textContent = `Erro ao processar/validar dados: ${error.message}`;
+            document.getElementById('previewSection').classList.remove('hidden');
+            document.getElementById('insertButton').disabled = true;
+
         } finally { 
             GG.showLoading(false); 
         }
     }
     
-    // ATUALIZADO: RenderPreview para aceitar a mensagem de resumo
+    // ATUALIZADO: RenderPreview para aceitar a mensagem de resumo customizada
     function renderPreview(rows, total, headerId, bodyId, summaryId, customSummary) {
         const header = document.getElementById(headerId);
         const body = document.getElementById(bodyId);
@@ -418,11 +464,19 @@ window.GG = {};
         columns.forEach(col => {
             header.innerHTML += `<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">${col}</th>`;
         });
-        const rowsToRender = rows.slice(0, 50);
+        const rowsToRender = rows.slice(0, 50); // Limite de 50 linhas para a prévia
         rowsToRender.forEach(row => {
             let tr = '<tr>';
             columns.forEach(col => {
-                tr += `<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">${row[col] !== null ? row[col] : ''}</td>`;
+                // Destaca colunas geradas
+                const isModified = [
+                    'Emp', 'nome_empresa', 'uf_empresa', 'Produto', 'codigo_produto', 
+                    'custo_unitario', 'ID', 'fornecedor', 'loja', 'Segmento', 'ano'
+                ].includes(col);
+                
+                const cellValue = row[col] !== null ? row[col] : '';
+
+                tr += `<td class="px-4 py-3 whitespace-nowrap text-sm ${isModified ? 'bg-yellow-100 font-medium' : 'text-gray-700'}">${cellValue}</td>`;
             });
             tr += '</tr>';
             body.innerHTML += tr;
