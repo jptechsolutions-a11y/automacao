@@ -87,16 +87,9 @@ window.GG = {};
         let str = String(val).trim();
         if (str === '') return null;
 
-        // Se tiver apenas vírgula como separador (ex: "2,5" ou "1000,50")
-        // Substitui vírgula por ponto.
-        // Nota: Se o sistema exporta "1.000,00", precisamos remover o ponto antes.
-        // Assumindo formato simples sem milhar ou com ponto para milhar:
-        
-        // Remove pontos (milhar)
-        // str = str.replace(/\./g, ''); 
-        // Acima é arriscado se o input for "2.5". Vamos assumir troca simples de , para .
-        
-        str = str.replace(',', '.');
+        // Tenta limpar pontos de milhar e substitui a vírgula por ponto decimal
+        // Ex: "1.000,50" -> "1000.50"
+        str = str.replace(/\./g, '').replace(',', '.');
         
         const num = parseFloat(str);
         return isNaN(num) ? null : num;
@@ -285,7 +278,31 @@ window.GG = {};
         if (!rawData) return;
         GG.showLoading(true);
         try {
-            const parsed = parseGenericData(rawData, COLUMN_MAP);
+            // 1. Parseia os dados brutos
+            let parsed = parseGenericData(rawData, COLUMN_MAP);
+            
+            // 2. NOVO: Aplica o tratamento de formatação em cada linha do IMOB.
+            parsed.forEach(row => {
+               // Tratamento de SEQMOVIMENTAÇÃO (Assumindo que é um BIGINT/Inteiro)
+               // Corrige o erro de sintaxe '73,000' -> 73000
+               if (row['SEQMOVIMENTAÇÃO']) {
+                   // Limpa a string: remove pontos de milhar e vírgulas, convertendo para inteiro limpo.
+                   let cleanedSeq = String(row['SEQMOVIMENTAÇÃO']).replace(/\./g, '').replace(/,/g, '');
+                   row['SEQMOVIMENTAÇÃO'] = parseInt(cleanedSeq) || null; 
+               }
+               
+               // Tratamento de QUANTIDADE (Assumindo que pode ter float)
+               row['QUANTIDADE'] = parsePtBrFloat(row['QUANTIDADE']);
+
+               // Tratamento de SALDO (Assumindo que pode ter float)
+               row['SALDO'] = parsePtBrFloat(row['SALDO']);
+               
+               // Tratamento de DATA
+               row['DATA'] = convertDateBRToISO(row['DATA']);
+
+               // Outras colunas numéricas que precisem de tratamento devem ser adicionadas aqui
+            });
+
             globalRowsToInsert = parsed; 
             renderPreview(globalRowsToInsert, parsed.length, 'previewHeader', 'previewBody', 'previewSummary');
             document.getElementById('previewSection').classList.remove('hidden');
