@@ -16,6 +16,7 @@ window.GG = {};
     let globalReconfRowsToInsert = [];
     let globalConfRowsToInsert = [];   
     let globalPanelConfig = new Map();
+    let globalLojasMap = new Map(); // NOVO: Mapa para simular PROCV na tabela 'lojas'
 
     // --- MAPAS DE COLUNAS ---
     
@@ -244,8 +245,30 @@ window.GG = {};
             populateDropdowns(); 
             initSettingsPage();
             await loadGlobalConfig();
+            await loadLojasMap(); // NOVO: Carrega o mapa de lojas para PROCV
             
             GG.showView('homeView', document.querySelector('a[href="#home"]'));
+        }
+    }
+
+    /**
+     * NOVO: Função para carregar o mapa de lojas (para simular PROCV)
+     */
+    async function loadLojasMap() {
+        if (!supabase) return;
+        try {
+            // Assumindo que a tabela é 'lojas' e que ela tem colunas 'id', 'nome_loja' e 'segmento'
+            const { data: lojas, error } = await supabase.from('lojas').select('id, nome_loja, segmento');
+            if (error) throw error;
+            
+            globalLojasMap.clear();
+            lojas.forEach(loja => {
+                // A chave é o ID do fornecedor, que é usado no "PROCV". Convertemos para string para garantir
+                globalLojasMap.set(String(loja.id), { loja: loja.nome_loja, segmento: loja.segmento });
+            });
+            console.log(`[IMOB] Mapa de Lojas carregado com ${globalLojasMap.size} itens.`);
+        } catch (error) {
+            console.error('[IMOB] Erro ao carregar mapa de lojas para PROCV:', error);
         }
     }
 
@@ -276,38 +299,136 @@ window.GG = {};
     async function handleProcessData() {
         const rawData = document.getElementById('dataInput').value;
         if (!rawData) return;
-        GG.showLoading(true);
+        GG.showLoading(true, 'Processando e Validando Dados IMOB...');
+        
         try {
             // 1. Parseia os dados brutos
             let parsed = parseGenericData(rawData, COLUMN_MAP);
+            let rowsToInsert = [];
+            let duplicates = 0;
             
-            // 2. NOVO: Aplica o tratamento de formatação em cada linha do IMOB.
-            parsed.forEach(row => {
-               // Tratamento de SEQMOVIMENTAÇÃO (Assumindo que é um BIGINT/Inteiro)
-               // Corrige o erro de sintaxe '73,000' -> 73000
-               if (row['SEQMOVIMENTAÇÃO']) {
-                   // Limpa a string: remove pontos de milhar e vírgulas, convertendo para inteiro limpo.
-                   let cleanedSeq = String(row['SEQMOVIMENTAÇÃO']).replace(/\./g, '').replace(/,/g, '');
-                   row['SEQMOVIMENTAÇÃO'] = parseInt(cleanedSeq) || null; 
-               }
-               
-               // Tratamento de QUANTIDADE (Assumindo que pode ter float)
-               row['QUANTIDADE'] = parsePtBrFloat(row['QUANTIDADE']);
+            // 1.1 Coletar todas as SEQMOVIMENTAÇÃO (limpas) existentes no batch
+            const currentSequences = parsed.map(row => {
+                let cleanedSeq = String(row['SEQMOVIMENTAÇÃO'] || '').replace(/\./g, '').replace(/,/g, '');
+                return parseInt(cleanedSeq) || null;
+            }).filter(seq => seq !== null);
 
-               // Tratamento de SALDO (Assumindo que pode ter float)
+            // 1.2 Fetch das sequências que JÁ existem no Supabase
+            let existingSequences = new Set();
+            if (currentSequences.length > 0) {
+                 const { data: existingData, error: fetchError } = await supabase
+                    .from('imob')
+                    .select('SEQMOVIMENTAÇÃO')
+                    .in('SEQMOVIMENTAÇÃO', currentSequences);
+
+                if (fetchError) throw fetchError;
+                
+                existingSequences = new Set(existingData.map(d => d.SEQMOVIMENTAÇÃO));
+            }
+
+
+            // 2. Aplicar Tratamento de Formatação, PROCV e Filtro
+            parsed.forEach(row => {
+               // A) Limpeza e Conversão
+               
+               // SEQMOVIMENTAÇÃO (Inteiro/BigInt Limpo - Resolve o erro '73,000')
+               let cleanedSeq = String(row['SEQMOVIMENTAÇÃO'] || '').replace(/\./g, '').replace(/,/g, '');
+               const seqMov = parseInt(cleanedSeq) || null; 
+               row['SEQMOVIMENTAÇÃO'] = seqMov;
+               
+               // NUMÉRICOS (Decimais)
+               row['QUANTIDADE'] = parsePtBrFloat(row['QUANTIDADE']);
                row['SALDO'] = parsePtBrFloat(row['SALDO']);
                
-               // Tratamento de DATA
-               row['DATA'] = convertDateBRToISO(row['DATA']);
+               // DATA (ISO)
+               const dataStr = row['DATA'];
+               row['DATA'] = convertDateBRToISO(dataStr);
+               
+               // B) Campos Gerados
+               
+               // NOVO CAMPO: ANO
+               if (row['DATA']) {
+                   row['ano'] = new Date(row['DATA']).getFullYear();
+               } else {
+                   row['ano'] = null;
+               }
 
-               // Outras colunas numéricas que precisem de tratamento devem ser adicionadas aqui
+               // C) Split e PROCV (Lojas/Segmento)
+               const idFornecedorFull = row['ID - Fornecedor'] || '';
+               const parts = idFornecedorFull.split('-');
+               const idKey = parts[0].trim();
+               const fornecedorName = parts.slice(1).join('-').trim() || null;
+               
+               // Novas colunas (a serem inseridas no banco, se a tabela imob as tiver)
+               row['ID'] = parseInt(idKey) || null;
+               row['fornecedor'] = fornecedorName;
+               row['loja'] = fornecedorName; // Valor default (SEERRO/IFERROR)
+               row['Segmento'] = null; // Valor default
+
+               // Simulação PROCV (VLOOKUP) - Usando o mapa carregado globalmente
+               if (globalLojasMap.has(idKey)) {
+                   const lojaData = globalLojasMap.get(idKey);
+                   row['loja'] = lojaData.loja || fornecedorName; 
+                   row['Segmento'] = lojaData.segmento;
+               } 
+
+               // D) Filtro de Duplicados
+               if (seqMov !== null && existingSequences.has(seqMov)) {
+                   duplicates++;
+                   return; // Ignora duplicados
+               }
+               
+               // E) Adicionar linha processada
+               rowsToInsert.push(row);
             });
 
-            globalRowsToInsert = parsed; 
-            renderPreview(globalRowsToInsert, parsed.length, 'previewHeader', 'previewBody', 'previewSummary');
+            globalRowsToInsert = rowsToInsert; 
+            
+            // Monta o resumo
+            const totalLines = parsed.length;
+            const newLines = rowsToInsert.length;
+            const summary = `Total de ${totalLines} linhas processadas. ${duplicates} já existem no banco. ${newLines} linhas novas prontas para inserção.`;
+
+            renderPreview(globalRowsToInsert, newLines, 'previewHeader', 'previewBody', 'previewSummary', summary);
+            
             document.getElementById('previewSection').classList.remove('hidden');
-        } finally { GG.showLoading(false); }
+            document.getElementById('insertButton').disabled = newLines === 0;
+
+        } catch (error) { 
+            console.error('Erro no processamento IMOB:', error);
+            alert(`Erro ao processar/validar dados: ${error.message}`);
+        } finally { 
+            GG.showLoading(false); 
+        }
     }
+    
+    // ATUALIZADO: RenderPreview para aceitar a mensagem de resumo
+    function renderPreview(rows, total, headerId, bodyId, summaryId, customSummary) {
+        const header = document.getElementById(headerId);
+        const body = document.getElementById(bodyId);
+        const summary = document.getElementById(summaryId);
+        
+        header.innerHTML = ''; body.innerHTML = '';
+        // Usa a mensagem de resumo customizada
+        summary.textContent = customSummary || `Total de ${total} linhas processadas.`;
+        
+        if (rows.length === 0) return;
+
+        const columns = Object.keys(rows[0]);
+        columns.forEach(col => {
+            header.innerHTML += `<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">${col}</th>`;
+        });
+        const rowsToRender = rows.slice(0, 50);
+        rowsToRender.forEach(row => {
+            let tr = '<tr>';
+            columns.forEach(col => {
+                tr += `<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">${row[col] !== null ? row[col] : ''}</td>`;
+            });
+            tr += '</tr>';
+            body.innerHTML += tr;
+        });
+    }
+
     async function handleInsertData() {
          insertBatch('imob', globalRowsToInsert, 'imobUploaderForm', 'imobSuccessScreen');
     }
@@ -332,7 +453,8 @@ window.GG = {};
             });
             
             globalMovRowsToInsert = rows;
-            renderPreview(rows, rows.length, 'movPreviewHeader', 'movPreviewBody', 'movPreviewSummary');
+            const summary = `Total de ${rows.length} linhas processadas e prontas para inserção.`;
+            renderPreview(rows, rows.length, 'movPreviewHeader', 'movPreviewBody', 'movPreviewSummary', summary);
             document.getElementById('movInsertButton').disabled = false;
         }, 'movPreviewSection');
     }
@@ -364,7 +486,8 @@ window.GG = {};
                 if(r['METRAGEMCUBICA']) r['METRAGEMCUBICA'] = parsePtBrFloat(r['METRAGEMCUBICA']);
             });
             globalSepRowsToInsert = rows;
-            renderPreview(rows, rows.length, 'sepPreviewHeader', 'sepPreviewBody', 'sepPreviewSummary');
+            const summary = `Total de ${rows.length} linhas processadas e prontas para inserção.`;
+            renderPreview(rows, rows.length, 'sepPreviewHeader', 'sepPreviewBody', 'sepPreviewSummary', summary);
             document.getElementById('sepInsertButton').disabled = false;
         }, 'sepPreviewSection');
     }
@@ -392,7 +515,8 @@ window.GG = {};
                  if(r['METRAGEMCUBICA']) r['METRAGEMCUBICA'] = parsePtBrFloat(r['METRAGEMCUBICA']);
              });
              globalReconfRowsToInsert = rows;
-             renderPreview(rows, rows.length, 'reconfPreviewHeader', 'reconfPreviewBody', 'reconfPreviewSummary');
+             const summary = `Total de ${rows.length} linhas processadas e prontas para inserção.`;
+             renderPreview(rows, rows.length, 'reconfPreviewHeader', 'reconfPreviewBody', 'reconfPreviewSummary', summary);
              document.getElementById('reconfInsertButton').disabled = false;
         }, 'reconfPreviewSection');
     }
@@ -416,7 +540,8 @@ window.GG = {};
                  if(r['DATA']) r['DATA'] = convertDateBRToISO(r['DATA']);
              });
              globalConfRowsToInsert = rows;
-             renderPreview(rows, rows.length, 'confPreviewHeader', 'confPreviewBody', 'confPreviewSummary');
+             const summary = `Total de ${rows.length} linhas processadas e prontas para inserção.`;
+             renderPreview(rows, rows.length, 'confPreviewHeader', 'confPreviewBody', 'confPreviewSummary', summary);
              document.getElementById('confInsertButton').disabled = false;
         }, 'confPreviewSection');
     }
@@ -490,7 +615,9 @@ window.GG = {};
     function processGenericData(inputId, map, callback, sectionId) {
         const rawData = document.getElementById(inputId).value;
         if (!rawData) {
-            alert('Por favor, cole os dados primeiro.');
+            // Em vez de alert(), apenas seta o texto no preview se for necessário
+            document.getElementById(sectionId)?.classList.remove('hidden');
+            document.getElementById(`${sectionId.replace('Section', 'Summary')}`).textContent = 'Por favor, cole os dados primeiro.';
             return; 
         }
         GG.showLoading(true);
@@ -500,7 +627,11 @@ window.GG = {};
         try {
             const rows = parseGenericData(rawData, map);
             callback(rows);
-        } catch(e) { console.error(e); alert('Erro processamento: ' + e.message); }
+        } catch(e) { 
+            console.error(e); 
+            // Usa o Summary para mostrar o erro sem alert
+            document.getElementById(`${sectionId.replace('Section', 'Summary')}`).textContent = `Erro processamento: ${e.message}`;
+        }
         finally { GG.showLoading(false); }
     }
 
@@ -571,29 +702,6 @@ window.GG = {};
         });
     }
 
-    function renderPreview(rows, total, headerId, bodyId, summaryId) {
-        const header = document.getElementById(headerId);
-        const body = document.getElementById(bodyId);
-        const summary = document.getElementById(summaryId);
-        
-        header.innerHTML = ''; body.innerHTML = '';
-        summary.textContent = `Total de ${total} linhas.`;
-        if (rows.length === 0) return;
-
-        const columns = Object.keys(rows[0]);
-        columns.forEach(col => {
-            header.innerHTML += `<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">${col}</th>`;
-        });
-        const rowsToRender = rows.slice(0, 50);
-        rowsToRender.forEach(row => {
-            let tr = '<tr>';
-            columns.forEach(col => {
-                tr += `<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">${row[col] !== null ? row[col] : ''}</td>`;
-            });
-            tr += '</tr>';
-            body.innerHTML += tr;
-        });
-    }
 
     function loadImobPanelIntoIframe() { loadPanelGeneric('imob', 'imobLookerIframe'); }
     function loadMovPanelIntoIframe() { loadPanelGeneric('movimentacao', 'movLookerIframe'); }
